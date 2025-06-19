@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\ResponseService;
 use App\Mail\{Verification};
 use App\Models\{Question, User};
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, Hash, Mail, Validator};
 use Laravel\Socialite\Facades\Socialite;
@@ -212,13 +214,50 @@ class AuthController extends Controller
         ], 200);
     }
 
+    // public function googleLogin(Request $request)
+    // {
+    //     $user = Socialite::driver('google')->stateless()->userFromToken($request->token);
+
+    //     return $this->socialLogin($user, 'google');
+    // }
+
     public function googleLogin(Request $request)
     {
-        $user = Socialite::driver('google')->stateless()->userFromToken($request->token);
+        try {
+            // Validate token presence
+            $request->validate(['token' => 'required|string']);
 
-        return $this->socialLogin($user, 'google');
+            // Fetch user details from Google
+            $googleUser = Socialite::driver('google')->stateless()->userFromToken($request->token);
+
+            // Ensure email is provided
+            if (!$googleUser->getEmail()) {
+                return response()->json(['success' => false, 'message' => 'Google account does not have an email.'], 400);
+            }
+
+            // Find or create user
+            $user = User::firstOrCreate(
+                ['email' => $googleUser->getEmail()],
+                [
+                    'password' => Hash::make(Str::random(16)),
+                    'otp_status' => 1,
+                    'device_token' => null
+                ]
+            );
+
+            // Generate API token
+            $token = $user->createToken('ApiToken')->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Google login successful.',
+                'data' => $user->only(['id', 'email']),
+                'token' => $token
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Google login failed.', 'error' => $e->getMessage()], 500);
+        }
     }
-
 
     public function appleLogin(Request $request)
     {
@@ -226,7 +265,6 @@ class AuthController extends Controller
 
         return $this->socialLogin($user, 'apple');
     }
-
 
     public function sendMail($title, $email, $body)
     {
@@ -239,10 +277,14 @@ class AuthController extends Controller
         Mail::to($email)->send(new Verification($mailData));
     }
 
-
-    public function  allQuestions()
+    public function allQuestions()
     {
-        $questions = Question::with('answers')->get();
+        // $questions = Question::with('answers')->get();
+
+        $questions = Question::select('id', 'question_text')
+            ->with(['answers:id,question_id,answer_text,points'])
+            ->get();
+
         return response()->json([
             'success' => true,
             'message' => 'Questionnaire Show Successfully.',

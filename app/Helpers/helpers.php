@@ -8,8 +8,8 @@ if (!function_exists('socialLogin')) {
         if (!$user) {
             $user = \App\Models\User::create([
                 'email' => $socialUser->email,
-                'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)), // Random password
-                'otp_status' => 1, // Mark as verified
+                'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(16)),
+                'otp_status' => 1,
                 'device_token' => null
             ]);
         }
