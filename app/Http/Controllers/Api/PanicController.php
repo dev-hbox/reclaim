@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\PanicTask;
-use App\Models\TaskHistory;
-use App\Models\UserProgress;
+use App\Models\{PanicTask, TaskHistory, UserProgress};
+use App\Services\ResponseService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\{Auth, Validator};
+
 
 class PanicController extends Controller
 {
@@ -65,20 +64,13 @@ class PanicController extends Controller
                 'correct_answer' => $correctAnswer
             ]);
 
-            return response()->json([
-                'success' => true,
-                'task' => [
-                    'id'        => $task->id,
-                    'type'      => $category,
-                    'description' => $taskDescription
-                ]
+            ResponseService::successResponse('Panic task started successfully.', [
+                'id'          => $task->id,
+                'type'        => $category,
+                'description' => $taskDescription
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error starting panic task: ' . $e->getMessage(),
-                'error'   => $e->getTraceAsString()
-            ], 500);
+            return ResponseService::errorResponse('Error starting panic task.', null, 500, $e);
         }
     }
 
@@ -90,12 +82,7 @@ class PanicController extends Controller
         ]);
 
         if ($validator->fails()) {
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed.',
-                'data' => $validator->errors(),
-            ], 422);
+            ResponseService::validationError($validator->errors()->first());
         }
         try {
 
@@ -155,16 +142,9 @@ class PanicController extends Controller
                 ['panic_action' => true]
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => $feedback,
-                'task'    => $task
-            ]);
+            ResponseService::successResponse($feedback, $task);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error completing panic task: ' . $e->getMessage(),
-            ], 500);
+            ResponseService::errorResponse('Error completing panic task.', null, 500, $e);
         }
     }
 
@@ -184,10 +164,9 @@ class PanicController extends Controller
         $user = Auth::user();
         $taskHistory = TaskHistory::where(['user_id' => $user->id, 'is_correct' => 1])->with('user')->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => "",
-            'data' => $taskHistory
-        ]);
+        ResponseService::successResponse(
+            'Completed tasks retrieved successfully.',
+            $taskHistory
+        );
     }
 }

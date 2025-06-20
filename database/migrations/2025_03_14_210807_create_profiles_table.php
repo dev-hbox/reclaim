@@ -21,7 +21,7 @@ return new class extends Migration
             $table->enum('task_intensity', ['light', 'moderate', 'deep'])->nullable()->default('light');
             $table->string('avatar')->default('/uploads/profile/user-default.png');
             $table->unsignedTinyInteger('risk_score')->default(0);
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }
