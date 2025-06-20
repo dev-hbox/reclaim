@@ -4,53 +4,47 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\SaveLesson;
+use App\Services\ResponseService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\{Auth, Validator};
+
 
 class SaveLessonController extends Controller
 {
     public function saveLesson(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'lesson_id' => 'required|exists:lessons,id'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $authUser = Auth::user();
-        $lessonId = $request->lesson_id;
-
-        // Check if the lesson is already saved
-        $savedLesson = SaveLesson::where('user_id', $authUser->id)
-            ->where('lesson_id', $lessonId)
-            ->first();
-
-        if ($savedLesson) {
-            $savedLesson->delete();
-            return response()->json([
-                'success' => true,
-                'message' => 'Lesson removed from saved list.'
-            ], 200);
-        } else {
-            $newSavedLesson = SaveLesson::create([
-                'user_id' => $authUser->id,
-                'lesson_id' => $lessonId,
+        try {
+            $validator = Validator::make($request->all(), [
+                'lesson_id' => 'required|exists:lessons,id'
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Lesson saved successfully.',
-                'data' => $newSavedLesson
-            ], 200);
+            if ($validator->fails()) {
+                ResponseService::validationError($validator->errors()->first());
+            }
+
+            $authUser = Auth::user();
+            $lessonId = $request->lesson_id;
+
+            // Check if the lesson is already saved
+            $savedLesson = SaveLesson::where('user_id', $authUser->id)
+                ->where('lesson_id', $lessonId)
+                ->first();
+
+            if ($savedLesson) {
+                $savedLesson->delete();
+                ResponseService::successResponse('Lesson removed from saved list.');
+            } else {
+                $newSavedLesson = SaveLesson::create([
+                    'user_id' => $authUser->id,
+                    'lesson_id' => $lessonId,
+                ]);
+
+                ResponseService::successResponse('Lesson saved successfully.', $newSavedLesson);
+            }
+        } catch (\Exception $e) {
+            ResponseService::errorResponse('Error saving lesson.', null, 500, $e);
         }
     }
-
 
     public function saveLessonList()
     {
@@ -58,11 +52,6 @@ class SaveLessonController extends Controller
         $saveLesson = SaveLesson::where("user_id", $user->id)
             ->with('lesson')
             ->get();
-
-        return response()->json([
-            'status'  => true,
-            'message' => 'Saved Lesson show successfully.',
-            'data'    => $saveLesson
-        ], 200);
+        ResponseService::successResponse('Saved Lesson show successfully.', $saveLesson);
     }
 }

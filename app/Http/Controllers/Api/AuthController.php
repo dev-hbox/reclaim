@@ -5,9 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\ResponseService;
 use App\Mail\{Verification};
-use App\Models\{Question, User};
+use App\Models\{Profile, Question, User};
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\{Auth, Hash, Mail, Validator};
 use Laravel\Socialite\Facades\Socialite;
 
@@ -23,10 +24,8 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
+
+            ResponseService::validationError($validator->errors()->first());
         }
 
         // Generate a random OTP
@@ -47,11 +46,12 @@ class AuthController extends Controller
             "Your OTP for email verification is: $otp"
         );
 
-        return response()->json([
-            'success' => true,
-            'otp' => $otp,
-            'message' => 'Registration successful. OTP has been sent to your email.',
-        ], 201);
+        ResponseService::successResponse(
+            'Registration successful. OTP has been sent to your email.',
+            ['otp' => $otp],
+            [],
+            201
+        );
     }
 
     public function resendOTP(Request $request)
@@ -61,19 +61,13 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
+            ResponseService::validationError($validator->errors()->first());
         }
 
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Email address not found.',
-            ], 404);
+            ResponseService::errorResponse('Email address not found.', null, 404);
         }
 
         // Generate new OTP and save it
@@ -84,10 +78,10 @@ class AuthController extends Controller
         // Send OTP via email
         $this->sendMail('OTP | Email Verification',  $user->email, "Your verification OTP is: $otp");
 
-        return response()->json([
-            'success' => true,
-            'message' => 'OTP has been sent to your email.',
-        ], 200);
+        ResponseService::successResponse(
+            'OTP has been sent to your email.',
+            ['otp' => $otp]
+        );
     }
 
     public function verifyOtp(Request $request)
@@ -98,19 +92,13 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
+            ResponseService::validationError($validator->errors()->first());
         }
 
         $user = User::where('email', $request->email)->where('otp', $request->otp)->first();
 
         if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid OTP or email.',
-            ], 400);
+            ResponseService::errorResponse('Invalid email or OTP.', null, 404);
         }
 
         // Update user as verified
@@ -119,10 +107,9 @@ class AuthController extends Controller
         $user->otp = null; // Clear OTP
         $user->save();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Email verification successful. You can now log in.',
-        ], 200);
+        ResponseService::successResponse(
+            'Email verification successful. You can now log in.'
+        );
     }
 
     public function forgotPassword(Request $request)
@@ -134,26 +121,17 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 409);
+            ResponseService::validationError($validator->errors()->first());
         }
 
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid email address.'
-            ], 404);
+            ResponseService::errorResponse('Invalid email address.', null, 404);
         }
 
         if ($user->otp != $request->otp) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid OTP.'
-            ], 409);
+            ResponseService::errorResponse('Invalid OTP.', null, 409);
         }
 
         // Update password and clear OTP
@@ -161,11 +139,9 @@ class AuthController extends Controller
         $user->otp = null;
         $user->save();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Password has been changed successfully.',
-        ], 200);
+        ResponseService::successResponse('Password has been changed successfully.');
     }
+
 
     public function login(Request $request)
     {
@@ -176,27 +152,18 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
+            ResponseService::validationError($validator->errors()->first());
         }
 
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid credentials.',
-            ], 401);
+            ResponseService::errorResponse('Invalid credentials.', null, 401);
         }
 
         // Ensure OTP is verified
         if ($user->otp_status == 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Please verify your email before logging in.',
-            ], 403);
+            ResponseService::errorResponse('Please verify your email before logging in.', null, 403);
         }
 
         // Update device token if provided
@@ -204,58 +171,56 @@ class AuthController extends Controller
             $user->update(['device_token' => $request->device_token]);
         }
 
+        // 🔄 Link anonymous profile if it exists (optional logic - adjust as per your criteria)
+        $unclaimedProfile = Profile::whereNull('user_id')->orderBy('created_at', 'desc')->first();
+
+        if ($unclaimedProfile) {
+            $unclaimedProfile->update(['user_id' => $user->id]);
+        }
+
         $token = $user->createToken('ApiToken')->plainTextToken;
-        // 'data' => $user->only(['id', 'name', 'email', 'otp_status', 'device_token']),
-        return response()->json([
-            'success' => true,
-            'message' => 'Login successful.',
-            'data' => $user,
-            'token' => $token,
-        ], 200);
+
+        ResponseService::successResponse(
+            'Login successful.',
+            [
+                'user'  => $user,
+                'token' => $token,
+            ]
+        );
     }
 
-    // public function googleLogin(Request $request)
-    // {
-    //     $user = Socialite::driver('google')->stateless()->userFromToken($request->token);
-
-    //     return $this->socialLogin($user, 'google');
-    // }
 
     public function googleLogin(Request $request)
     {
         try {
-            // Validate token presence
-            $request->validate(['token' => 'required|string']);
+            $request->validate([
+                'token' => 'required|string',
+                'device_token' => 'nullable|string'
+            ]);
 
-            // Fetch user details from Google
             $googleUser = Socialite::driver('google')->stateless()->userFromToken($request->token);
 
-            // Ensure email is provided
             if (!$googleUser->getEmail()) {
-                return response()->json(['success' => false, 'message' => 'Google account does not have an email.'], 400);
+                ResponseService::errorResponse('Google account does not have an email.', null, 400);
             }
 
-            // Find or create user
             $user = User::firstOrCreate(
                 ['email' => $googleUser->getEmail()],
                 [
                     'password' => Hash::make(Str::random(16)),
                     'otp_status' => 1,
-                    'device_token' => null
+                    'device_token' => $request->device_token,
                 ]
             );
 
-            // Generate API token
             $token = $user->createToken('ApiToken')->plainTextToken;
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Google login successful.',
-                'data' => $user->only(['id', 'email']),
+            ResponseService::successResponse('Google login successful.', [
+                'user'  => $user,
                 'token' => $token
-            ], 200);
-        } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Google login failed.', 'error' => $e->getMessage()], 500);
+            ]);
+        } catch (\Exception $e) {
+            ResponseService::errorResponse('Google login failed.', null, 500, $e);
         }
     }
 
@@ -279,16 +244,13 @@ class AuthController extends Controller
 
     public function allQuestions()
     {
-        // $questions = Question::with('answers')->get();
-
         $questions = Question::select('id', 'question_text')
             ->with(['answers:id,question_id,answer_text,points'])
             ->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Questionnaire Show Successfully.',
-            'data' => $questions,
-        ], 200);
+        ResponseService::successResponse(
+            'Questionnaire Show Successfully.',
+            $questions
+        );
     }
 }

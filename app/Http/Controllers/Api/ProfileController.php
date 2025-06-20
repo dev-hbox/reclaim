@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\ResponseService;
 use App\Models\Answer;
 use App\Models\Profile;
 use App\Models\User;
@@ -17,21 +18,19 @@ class ProfileController extends Controller
     public function user()
     {
         $user = Auth::user();
-        return response()->json([
-            'success' => true,
-            'data' => $user,
-            'message' => 'Profile retrieved successfully.',
 
-        ], 200);
+        ResponseService::successResponse(
+            'Profile retrieved successfully.',
+            $user
+        );
     }
 
     public function createProfile(Request $request)
     {
-
         $validator = Validator::make($request->all(), [
             'name' => 'required|string',
             'age' => 'required|numeric',
-            'gender' => 'required|string',
+            'gender' => 'required|in:male,female,other',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'answers' => 'required|array',
             'answers.*.question_id' => 'required|exists:questions,id',
@@ -39,16 +38,11 @@ class ProfileController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed.',
-                'data' => $validator->errors(),
-            ], 422);
+            ResponseService::validationError($validator->errors()->first());
         }
 
         try {
-            $user = Auth::user();
-            // Handle avatar upload
+            // Handle avatar
             $avatar = 'uploads/profile/user-default.png';
             if ($request->hasFile('avatar')) {
                 $filename = time() . '.' . $request->avatar->getClientOriginalExtension();
@@ -56,62 +50,38 @@ class ProfileController extends Controller
                 $avatar = 'uploads/profile/' . $filename;
             }
 
-            // Check if profile exists
-            if (Profile::where('user_id', $user->id)->exists()) {
-                return response()->json(['success' => false, 'message' => 'Profile already exists'], 400);
-            }
-
-            // Create Profile
+            // Create profile without user_id (will be linked after login)
             $profile = Profile::create([
                 'name' => $request->name,
                 'age' => $request->age,
                 'gender' => $request->gender,
                 'avatar' => $avatar,
-                'user_id' => $user->id,
+                'user_id' => null, // Initially null
             ]);
 
-            // Save User Answers
+            // Save user answers and calculate score
             $totalScore = 0;
             foreach ($request->answers as $answer) {
-                $selected = UserAnswer::updateOrCreate(
-                    [
-                        'user_id' => $user->id,
-                        'question_id' => $answer['question_id']
-                    ],
-                    ['answer_id' => $answer['answer_id']]
-                );
-
                 $answerModel = Answer::find($answer['answer_id']);
                 if ($answerModel) {
                     $totalScore += $answerModel->points;
                 }
             }
-            // Update profile with total risk score
+
             $profile->update(['risk_score' => $totalScore]);
-
-            // create user progress 
-            UserProgress::create([
-                'user_id' => $user->id,
-                'points' => 0,
-                'level' => 1,
-                'rank' => 1,
-                'streak_days' => 0,
-                'missed_checkins' => 0,
-            ]);
-
-
 
             $message = $this->getRiskLevelMessage($totalScore, $request->name);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Profile has been created successfully.',
-                'risk_score' => $totalScore,
-                'welcome_message' => $message,
-                'profile' => $profile,
-            ]);
+            ResponseService::successResponse(
+                'Profile created successfully (without user_id).',
+                [
+                    'risk_score'      => $totalScore,
+                    'welcome_message' => $message,
+                    'profile'         => $profile,
+                ]
+            );
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            ResponseService::errorResponse('Error creating profile.', null, 500, $e);
         }
     }
 
@@ -128,37 +98,33 @@ class ProfileController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed.',
-                'data' => $validator->errors(),
-            ], 422);
+            ResponseService::validationError($validator->errors()->first());
         }
 
         try {
             $user = Auth::user();
-
-            // Check if profile exists
             $profile = Profile::where('user_id', $user->id)->first();
+
             if (!$profile) {
-                return response()->json(['success' => false, 'message' => 'Profile not found'], 404);
+                ResponseService::errorResponse('Profile not found.', null, 404);
             }
 
-            // Handle avatar upload (if new file is uploaded)
+            // Handle avatar upload
             if ($request->hasFile('avatar')) {
                 $filename = time() . '.' . $request->avatar->getClientOriginalExtension();
                 $request->avatar->move(public_path('uploads/profile/'), $filename);
                 $profile->avatar = '/uploads/profile/' . $filename;
             }
 
-            // Update Profile
+            // Update basic profile info
             $profile->update([
-                'name' => $request->name,
-                'age' => $request->age,
+                'name'   => $request->name,
+                'age'    => $request->age,
                 'gender' => $request->gender,
             ]);
 
-            // Update User Answers
+            // Update user answers and calculate new risk score
+            $totalScore = 0;
             foreach ($request->answers as $answer) {
                 UserAnswer::updateOrCreate(
                     [
@@ -167,29 +133,56 @@ class ProfileController extends Controller
                     ],
                     ['answer_id' => $answer['answer_id']]
                 );
+
+                $answerModel = Answer::find($answer['answer_id']);
+                if ($answerModel) {
+                    $totalScore += $answerModel->points;
+                }
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Profile updated successfully.',
-                'profile' => $profile,
-            ]);
+            $profile->update(['risk_score' => $totalScore]);
+
+            ResponseService::successResponse(
+                'Profile updated successfully.',
+                ['profile' => $profile]
+            );
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            ResponseService::errorResponse(
+                'An error occurred while updating the profile.',
+                null,
+                500,
+                $e
+            );
         }
     }
+
 
     public function profile()
     {
         $user = Auth::user();
-        $profile = User::with(['profile', 'userAnswers.question', 'userAnswers.answer'])->where('id', $user->id)->first();
-        $message = $this->getRiskLevelMessage($profile->profile->risk_score ?? 0, $profile->profile->name ?? '');
-        return response()->json([
-            'success' => true,
-            'message' => 'Profile data retrieved successfully.',
-            'welcome_message' => $message,
-            'data' => $profile,
-        ], 200);
+
+        $profile = User::with([
+            'profile',
+            'userAnswers.question',
+            'userAnswers.answer'
+        ])->find($user->id);
+
+        if (!$profile) {
+            ResponseService::errorResponse('User profile not found.', null, 404);
+        }
+
+        $message = $this->getRiskLevelMessage(
+            $profile->profile->risk_score ?? 0,
+            $profile->profile->name ?? ''
+        );
+
+        ResponseService::successResponse(
+            'Profile data retrieved successfully.',
+            [
+                'welcome_message' => $message,
+                'profile'         => $profile,
+            ]
+        );
     }
 
     private function getRiskLevelMessage($score, $name)
@@ -221,10 +214,9 @@ class ProfileController extends Controller
             'task_intensity' => $user->profile->task_intensity,
         ];
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Task category updated successfully.',
-            'data' => $data
-        ]);
+        return ResponseService::successResponse(
+            'Task category updated successfully.',
+            $data
+        );
     }
 }

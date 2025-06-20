@@ -23,18 +23,18 @@ Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 
-Route::post('auth/google', [AuthController::class, 'googleLogin']);
+Route::post('google-login', [AuthController::class, 'googleLogin']);
 Route::post('auth/apple', [AuthController::class, 'appleLogin']);
 
 
 Route::get('/all-questions', [AuthController::class, 'allQuestions']);
-
+Route::post('/create-profile', [ProfileController::class, 'createProfile']);
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // User Profile Routes
     Route::get('/user', [profileController::class, 'user']);
-    Route::post('/create-profile', [ProfileController::class, 'createProfile']);
+
     Route::post('/update-profile', [profileController::class, 'updateProfile']);
     Route::get('/profile', [profileController::class, 'profile']);
     Route::get('/all-users', [AuthController::class, 'allUsers']);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Commitment;
+use App\Services\ResponseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -14,11 +15,10 @@ class CommitmentController extends Controller
     {
         $user = Auth::user();
         $commits = Commitment::where('user_id', $user->id)->get();
-        return response()->json([
-            'success' => true,
-            'message' => 'Commitments retrieved successfully.',
-            'data' => $commits,
-        ], 200);
+        ResponseService::successResponse(
+            'Commitments retrieved successfully.',
+            $commits
+        );
     }
 
     public function storeCommit(Request $request)
@@ -31,11 +31,7 @@ class CommitmentController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation failed.',
-                    'data' => $validator->errors(),
-                ], 422);
+                ResponseService::validationError($validator->errors()->first());
             }
 
             $user = Auth::user();
@@ -47,14 +43,12 @@ class CommitmentController extends Controller
                 'user_id' => $user->id,
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Commitment has been created successfully.',
-                'data' => $commit,
-
-            ]);
+            ResponseService::successResponse(
+                'Commitment has been created successfully.',
+                $commit
+            );
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            ResponseService::errorResponse('Something went wrong while creating the commitment.', null, 500, $e);
         }
     }
 
@@ -69,11 +63,7 @@ class CommitmentController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed.',
-                'data' => $validator->errors(),
-            ], 422);
+            ResponseService::validationError($validator->errors()->first());
         }
 
         try {
@@ -82,7 +72,7 @@ class CommitmentController extends Controller
 
             // Check if the authenticated user is the owner of the commitment
             if ($commit->user_id !== Auth::id()) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+                ResponseService::errorResponse('Unauthorized.', null, 403);
             }
 
             // Update the commitment with the provided data
@@ -92,13 +82,12 @@ class CommitmentController extends Controller
                 'description' => $request->description ?? $commit->description,
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Commitment has been updated successfully.',
-                'data' => $commit,
-            ]);
+            ResponseService::successResponse(
+                'Commitment has been updated successfully.',
+                $commit
+            );
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            ResponseService::errorResponse('Something went wrong while updating the commitment.', null, 500, $e);
         }
     }
 
@@ -110,11 +99,7 @@ class CommitmentController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed.',
-                'data' => $validator->errors(),
-            ], 422);
+            ResponseService::validationError($validator->errors()->first());
         }
 
         try {
@@ -123,18 +108,15 @@ class CommitmentController extends Controller
 
             // Check if the authenticated user is the owner of the commitment
             if ($commit->user_id !== Auth::id()) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+                ResponseService::errorResponse('Unauthorized.', null, 403);
             }
 
             // Delete the commitment
             $commit->delete();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Commitment has been deleted successfully.',
-            ]);
+            ResponseService::successResponse('Commitment has been deleted successfully.');
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            ResponseService::errorResponse('Something went wrong while deleting the commitment.', null, 500, $e);
         }
     }
 
@@ -147,17 +129,13 @@ class CommitmentController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed.',
-                'data' => $validator->errors(),
-            ], 422);
+            ResponseService::validationError($validator->errors()->first());
         }
 
         try {
             $commit = Commitment::findOrFail($request->id);
             if ($commit->user_id !== Auth::id()) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+                ResponseService::errorResponse('Unauthorized.', null, 403);
             }
 
 
@@ -165,13 +143,12 @@ class CommitmentController extends Controller
                 'status' => $request->status,
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Commitment status has been updated successfully.',
-                'data' => $commit,
-            ]);
+            ResponseService::successResponse(
+                'Commitment status has been updated successfully.',
+                $commit
+            );
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            ResponseService::errorResponse('Something went wrong while updating the status.', null, 500, $e);
         }
     }
 }

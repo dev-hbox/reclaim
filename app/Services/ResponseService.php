@@ -14,19 +14,26 @@ class ResponseService
      * @param array $meta
      * @return \Illuminate\Http\JsonResponse
      */
-    public static function successResponse(string|null $message = "Success", $data = null, array $customData = [], $code = null, $meta = [])
-    {
-        // Default to 200 if no code provided, otherwise use the provided $code (e.g., 201 for resource creation)
-        $code = $code ?? 200;
 
-        return response()->json(array_merge([
-            'success' => true,
-            'message' => trans($message),
+
+    public static function validationError(string $message = 'Error Occurred', $data = null)
+    {
+        // 422 is the standard HTTP status code for validation errors
+        self::errorResponse($message, $data, 422);
+    }
+
+
+    public static function successResponse(string|null $message = "Success", $data = null, array $customData = [], int $code = 200): void
+    {
+        $response = array_merge([
+            'error'   => false,
+            'message' => $message ? trans($message) : '',
             'data'    => $data,
             'code'    => $code,
-            'errors'  => null, // No errors in success response
-            'meta'    => $meta // Optional metadata like pagination, etc.
-        ], $customData), $code);
+        ], $customData);
+
+        response()->json($response, $code)->send();
+        exit();
     }
 
     /**
@@ -39,22 +46,20 @@ class ResponseService
      * @param array $meta
      * @return \Illuminate\Http\JsonResponse
      */
-    public static function errorResponse(string $message = 'Error Occurred', $data = null, $code = null, $e = null, $meta = [])
+    public static function errorResponse(string $message = 'Error Occurred', $data = null, int $code = 422, \Throwable $e = null): void
     {
-        // Default to 400 if no code provided, otherwise use the provided $code (e.g., 422 for validation errors)
-        $code = $code ?? 400;
-
-        return response()->json([
-            'success' => false,
-            'message' => trans($message),
+        $response = [
+            'error'   => true,
+            'message' => $message ? trans($message) : '',
             'data'    => $data,
             'code'    => $code,
-            'errors'  => $e ? [
-                'message' => $e->getMessage(),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine()
-            ] : null, // Include error details if exception provided
-            'meta'    => $meta // Optional metadata
-        ], $code);
+        ];
+
+        if ($e instanceof \Throwable) {
+            $response['details'] = $e->getMessage() . ' --> ' . $e->getFile() . ' At Line : ' . $e->getLine();
+        }
+
+        response()->json($response, $code)->send();
+        exit();
     }
 }

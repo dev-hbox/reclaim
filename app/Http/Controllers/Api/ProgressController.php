@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\UserProgress;
+use App\Services\ResponseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,22 +16,21 @@ class ProgressController extends Controller
         $progress = UserProgress::where('user_id', $user->id)->first();
 
         if (!$progress) {
-            return response()->json(['success' => false, 'message' => 'Progress not found.'], 404);
+            ResponseService::errorResponse('Progress not found.', null, 404);
         }
 
         $rankName = $this->getRankName($progress->level);
 
-        return response()->json([
-            'success' => true,
-            'message' => "Progress data Show Successfully!",
-            'data' => [
-                'points' => $progress->points,
-                'level' => $progress->level,
-                'rank' => $rankName,
-                'streak_days' => $progress->streak_days,
+        ResponseService::successResponse(
+            'Progress data retrieved successfully!',
+            [
+                'points'          => $progress->points,
+                'level'           => $progress->level,
+                'rank'            => $rankName,
+                'streak_days'     => $progress->streak_days,
                 'missed_checkins' => $progress->missed_checkins,
             ]
-        ]);
+        );
     }
 
     private function getRankName($level)
