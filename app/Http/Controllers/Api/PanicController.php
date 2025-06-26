@@ -20,123 +20,135 @@ class PanicController extends Controller
             $preferredCategory = $user->profile->task_category;
             $preferredIntensity = $user->profile->task_intensity;
 
-            $categoryIntensities = [
-                'mental' => 'light',
-                'physical' => 'moderate',
-                'breathing' => 'light',
-                'habit' => 'light',
-                'random' => $preferredIntensity ?: 'light',
-            ];
+            // Allowed task categories
+            $validCategories = ['mental', 'physical', 'breathing', 'habit'];
 
-            $category = $preferredCategory ?: 'random';
-            $intensity = $categoryIntensities[$category] ?? 'light';
+            // Determine category
+            if (!$preferredCategory || $preferredCategory === 'random' || !in_array($preferredCategory, $validCategories)) {
+                $category = $validCategories[array_rand($validCategories)];
+                $intensity = $preferredIntensity ?? 'light'; // use user-defined or fallback to light
+            } else {
+                $category = $preferredCategory;
 
-            // Generate task description based on category
+                // Default intensity mapping for known categories
+                $categoryIntensities = [
+                    'mental'    => 'light',
+                    'physical'  => 'moderate',
+                    'breathing' => 'light',
+                    'habit'     => 'light',
+                ];
+
+                $intensity = $categoryIntensities[$category] ?? 'light';
+            }
+
+            // Task generation logic
             if ($category === 'mental') {
                 $problem = $this->generateMathProblem();
                 $taskDescription = "Solve this: " . $problem['question'];
-                $correctAnswer = $problem['answer']; // Store the correct answer for comparison
+                $correctAnswer = $problem['answer'];
             } elseif ($category === 'physical') {
                 $taskDescription = 'Do 20 jumping jacks. Did you complete it?';
-                $correctAnswer = true; // Set as true for physical confirmation
+                $correctAnswer = true;
             } elseif ($category === 'breathing') {
                 $taskDescription = 'Perform a 4-4-4-4 breathing cycle. Did you complete it?';
                 $correctAnswer = true;
             } elseif ($category === 'habit') {
                 $taskDescription = 'Write down 1 gratitude item.';
-                $correctAnswer = null; // No specific answer for habit tasks
-            } elseif ($category === 'interactive') {
-                $taskDescription = 'Scan a random item’s barcode.';
-                $correctAnswer = null; // No answer needed for scanning tasks
-            } else {
-                $taskDescription = 'Stay focused – you’ve got this!';
-                $correctAnswer = null; // Default for random
+                $correctAnswer = null;
             }
 
-            // Create the panic task
             $task = PanicTask::create([
-                'user_id'    => $user->id,
-                'task_type'  => $category,
-                'intensity'  => $intensity,
-                'started_at' => now(),
-                'completed'  => false,
-                'description' => $taskDescription,
+                'user_id'        => $user->id,
+                'task_type'      => $category,
+                'intensity'      => $intensity,
+                'started_at'     => now(),
+                'completed'      => false,
+                'description'    => $taskDescription,
                 'correct_answer' => $correctAnswer
             ]);
 
             ResponseService::successResponse('Panic task started successfully.', [
                 'id'          => $task->id,
                 'type'        => $category,
+                'intensity'   => $intensity,
                 'description' => $taskDescription
             ]);
         } catch (\Exception $e) {
-            return ResponseService::errorResponse('Error starting panic task.', null, 500, $e);
+            ResponseService::errorResponse('Error starting panic task.', null, 500, $e);
         }
     }
 
     public function completePanicTask(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'task_id' => 'required|required|integer',
+            'task_id' => 'required|integer',
             'answer' => 'sometimes|required|string',
         ]);
 
         if ($validator->fails()) {
             ResponseService::validationError($validator->errors()->first());
         }
-        try {
 
+        try {
             $user = Auth::user();
-            $task = PanicTask::where('id', $request->task_id)->where('user_id', $user->id)->firstOrFail();
+
+            $task = PanicTask::where('id', $request->task_id)
+                ->where('user_id', $user->id)
+                ->firstOrFail();
 
             $userAnswer = $request->input('answer');
             $feedback = '';
+            $isCorrect = false;
 
-            $userAnswer = (int)$userAnswer;
-            $correctAnswer = (int)$task->correct_answer;
+            // Evaluate based on task type
+            switch ($task->task_type) {
+                case 'mental':
+                    $userAnswer = (int) $userAnswer;
+                    $correctAnswer = (int) $task->correct_answer;
 
-            if ($task->task_type === 'mental') {
-                if ($userAnswer === $correctAnswer) {
-                    $feedback = 'Correct! Well done.';
+                    if ($userAnswer === $correctAnswer) {
+                        $feedback = 'Correct! Well done.';
+                        $isCorrect = true;
+                    } else {
+                        $feedback = 'Wrong answer. Try again next time!';
+                    }
+                    break;
+
+                case 'physical':
+                case 'breathing':
+                case 'habit':
+                    $feedback = 'Task completed successfully.';
                     $isCorrect = true;
-                } else {
-                    $feedback = 'Wrong answer. Try again next time!';
-                    $isCorrect = false;
-                }
-            } elseif ($task->task_type === 'physical' || $task->task_type === 'breathing' || $task->task_type === 'habit' || $task->task_type === 'interactive') {
-                $feedback = 'Task completed successfully.';
-                $isCorrect = true;
+                    break;
+
+                default:
+                    $feedback = 'Task marked as complete.';
+                    $isCorrect = true;
+                    break;
             }
 
+            // Update panic task
             $task->update([
                 'completed'    => true,
                 'completed_at' => now(),
                 'notes'        => $feedback,
             ]);
 
-            // Find existing task history and update it
-            $taskHistory = TaskHistory::where('user_id', $user->id)
-                ->where('task_type', $task->task_type)
-                ->where('task_description', $task->description)
-                ->first();
-
-            if ($taskHistory) {
-                $taskHistory->update([
-                    'completed_at' => now(),
-                    'notes'         => $feedback,
-                    'is_correct'    => $isCorrect,
-                ]);
-            } else {
-                TaskHistory::create([
-                    'user_id'        => $user->id,
-                    'task_type'      => $task->task_type,
+            // Update or create task history
+            TaskHistory::updateOrCreate(
+                [
+                    'user_id'         => $user->id,
+                    'task_type'       => $task->task_type,
                     'task_description' => $task->description,
-                    'completed_at'   => now(),
-                    'notes'          => $feedback,
-                    'is_correct'     => $isCorrect,
-                ]);
-            }
+                ],
+                [
+                    'completed_at' => now(),
+                    'notes'        => $feedback,
+                    'is_correct'   => $isCorrect,
+                ]
+            );
 
+            // Update user progress panic_action flag
             UserProgress::updateOrCreate(
                 ['user_id' => $user->id],
                 ['panic_action' => true]
