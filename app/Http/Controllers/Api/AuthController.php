@@ -173,11 +173,11 @@ class AuthController extends Controller
 
         // 🔄 Link anonymous profile if it exists (optional logic - adjust as per your criteria)
         $unclaimedProfile = Profile::whereNull('user_id')->orderBy('created_at', 'desc')->first();
-
         if ($unclaimedProfile) {
             $unclaimedProfile->update(['user_id' => $user->id]);
         }
-
+        $user['profile_name'] = $unclaimedProfile->name ?? '';
+        $user['profile_gender'] = $unclaimedProfile->gender ?? '';
         $token = $user->createToken('ApiToken')->plainTextToken;
 
         ResponseService::successResponse(
@@ -188,7 +188,6 @@ class AuthController extends Controller
             ]
         );
     }
-
 
     public function googleLogin(Request $request)
     {
