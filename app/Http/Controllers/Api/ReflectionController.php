@@ -22,8 +22,7 @@ class ReflectionController extends Controller
                 'temptation_level' => 'nullable|integer|min:0|max:10',
                 'temptation_label' => 'nullable|in:low,medium,high',
                 'time_of_day' => 'nullable|in:morning,afternoon,evening,night',
-                'triggers' => 'nullable|array',
-                'triggers.*' => 'string',
+                'triggers' => 'nullable|string',
                 'notes' => 'nullable|string',
             ]);
 
@@ -43,7 +42,7 @@ class ReflectionController extends Controller
                 'temptation_level' => $request->temptation_level,
                 'temptation_label' => $request->temptation_label,
                 'time_of_day' => $request->time_of_day,
-                'triggers' => json_encode($request->triggers ?? []),
+                'triggers' => $request->triggers,
                 'notes' => $request->notes,
             ]);
 
@@ -114,10 +113,7 @@ class ReflectionController extends Controller
             // Return the response with updated reflection and progress
             ResponseService::successResponse(
                 'Reflection recorded. Progress updated.',
-                [
-                    'reflection' => $reflection,
-                    'progress'   => $progress
-                ]
+                ['reflection' => $reflection, 'progress'   => $progress]
             );
         } catch (\Exception $e) {
             ResponseService::errorResponse('Something went wrong while saving the reflection.', null, 500, $e);
