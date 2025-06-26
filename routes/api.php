@@ -30,6 +30,9 @@ Route::post('auth/apple', [AuthController::class, 'appleLogin']);
 Route::get('/all-questions', [AuthController::class, 'allQuestions']);
 Route::post('/create-profile', [ProfileController::class, 'createProfile']);
 
+Route::get('/daily-affirmation', [AuthController::class, 'todayAffirmation']);
+
+
 Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // User Profile Routes

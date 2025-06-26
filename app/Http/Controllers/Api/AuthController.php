@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\ResponseService;
 use App\Mail\{Verification};
-use App\Models\{Profile, Question, User};
+use App\Models\{DailyAffirmative, Profile, Question, User};
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -254,5 +254,21 @@ class AuthController extends Controller
             'Questionnaire Show Successfully.',
             $questions
         );
+    }
+
+    public function todayAffirmation()
+    {
+        $today = now()->toDateString();
+
+        // Try to find today's affirmation
+        $affirmation = DailyAffirmative::where('show_date', '<=', $today)
+            ->orderByDesc('show_date')
+            ->first();
+
+        if (!$affirmation) {
+            ResponseService::errorResponse('No affirmation available yet.', null, 404);
+        }
+
+        ResponseService::successResponse('Affirmation fetched.', $affirmation);
     }
 }
