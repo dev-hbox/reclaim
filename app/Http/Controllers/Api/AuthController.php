@@ -173,11 +173,14 @@ class AuthController extends Controller
 
         // 🔄 Link anonymous profile if it exists (optional logic - adjust as per your criteria)
         $unclaimedProfile = Profile::whereNull('user_id')->orderBy('created_at', 'desc')->first();
+        $profile = Profile::where('user_id', $user->id)->first();
+
         if ($unclaimedProfile) {
             $unclaimedProfile->update(['user_id' => $user->id]);
         }
-        $user['profile_name'] = $unclaimedProfile->name ?? '';
-        $user['profile_gender'] = $unclaimedProfile->gender ?? '';
+        $user['profile_name'] = $profile->name ?? '';
+        $user['profile_gender'] = $profile->gender ?? '';
+        $user['profile_image'] = $profile->avatar ?? '';
         $token = $user->createToken('ApiToken')->plainTextToken;
 
         ResponseService::successResponse(
