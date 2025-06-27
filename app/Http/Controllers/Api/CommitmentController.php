@@ -144,7 +144,7 @@ class CommitmentController extends Controller
             ]);
 
             ResponseService::successResponse(
-                'Commitment status has been updated successfully.',
+                'Commitment status has been updated successfully',
                 $commit
             );
         } catch (\Exception $e) {
