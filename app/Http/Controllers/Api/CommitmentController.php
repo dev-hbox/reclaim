@@ -133,11 +133,11 @@ class CommitmentController extends Controller
         }
 
         try {
+            $userID = Auth::user()->id;
             $commit = Commitment::findOrFail($request->id);
-            if ($commit->user_id !== Auth::id()) {
+            if ($commit->user_id !== $userID) {
                 ResponseService::errorResponse('Unauthorized.', null, 403);
             }
-
 
             $commit->update([
                 'status' => $request->status,

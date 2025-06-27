@@ -20,6 +20,11 @@ class Post extends Model
 
     public function likes()
     {
-        return $this->hasMany(Like::class);
+        return $this->hasMany(Like::class)->whereNotNull('post_id');
+    }
+
+    public function reports()
+    {
+        return $this->hasMany(PostReport::class);
     }
 }
