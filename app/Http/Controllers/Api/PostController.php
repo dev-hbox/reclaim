@@ -17,8 +17,8 @@ class PostController extends Controller
     public function createPost(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'title' => 'required|string',
-            'content' => 'required|string',
+            'title' => 'nullable|string',
+            'content' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
@@ -54,7 +54,7 @@ class PostController extends Controller
         $authUserId = Auth::id();
 
         $posts = Post::whereDoesntHave('reports', function ($q) use ($authUserId) {
-            $q->where('user_id', $authUserId);
+            $q->where('user_id', $authUserId); // regardless of status, hide if user reported
         })->with([
             'user.profile',
             'likes' => function ($query) {
@@ -102,63 +102,52 @@ class PostController extends Controller
     public function getSinglePost($id)
     {
         try {
-            $authUserId = Auth::id();
+            $userId = Auth::id();
 
-            $post = Post::whereDoesntHave('reports', function ($q) use ($authUserId) {
-                $q->where('user_id', $authUserId);
+            $post = Post::whereDoesntHave('reports', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
             })->with([
                 'user.profile',
-                'likes' => function ($query) {
-                    $query->whereNotNull('post_id');
-                },
+                'likes',
                 'comments.user.profile',
-                'comments.likes' => function ($query) {
-                    $query->whereNotNull('comment_id');
-                },
-                'reports' // Needed to detect if current user reported it
+                'comments.likes'
             ])->findOrFail($id);
 
-            // Check if current user has reported this post
-            $isReported = $post->reports->where('user_id', $authUserId)->isNotEmpty();
-
             $formattedPost = [
-                'id'           => $post->id,
-                'title'        => $post->title,
-                'content'      => $post->content,
-                'image'        => $post->image,
-                'created_at'   => $post->created_at->toDateTimeString(),
-
-                'user'         => [
-                    'id'      => $post->user->id,
-                    'profile' => $post->user->profile,
+                'id'             => $post->id,
+                'title'          => $post->title,
+                'content'        => $post->content,
+                'image'          => $post->image,
+                'created_at'     => $post->created_at->toDateTimeString(),
+                'total_likes'    => $post->likes->count(),
+                'total_comments' => $post->comments->count(),
+                'is_liked'       => $post->likes->contains('user_id', $userId),
+                'user'           => [
+                    'id'     => $post->user->id,
+                    'avatar' => optional($post->user->profile)->avatar,
                 ],
-
-                'likes_count'  => $post->likes->count(),
-                'is_liked'     => $post->likes->where('user_id', $authUserId)->isNotEmpty(),
-                'is_reported'  => $isReported,
-
-                'comments'     => $post->comments->map(function ($comment) use ($authUserId) {
+                'comments' => $post->comments->map(function ($comment) use ($userId) {
                     return [
                         'id'           => $comment->id,
                         'comment'      => $comment->comment,
                         'created_at'   => $comment->created_at->toDateTimeString(),
-                        'likes_count'  => $comment->likes->count(),
-                        'is_liked'     => $comment->likes->where('user_id', $authUserId)->isNotEmpty(),
+                        'total_likes'  => $comment->likes->count(),
+                        'is_liked'     => $comment->likes->contains('user_id', $userId),
                         'user'         => [
-                            'id'      => $comment->user->id,
-                            'name'    => $comment->user->name,
-                            'profile' => $comment->user->profile,
+                            'id'     => $comment->user->id,
+                            'avatar' => optional($comment->user->profile)->avatar,
                         ]
                     ];
-                }),
+                })
             ];
 
             ResponseService::successResponse('Post fetched successfully.', $formattedPost);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            ResponseService::errorResponse('Post not found.', [], 404);
         } catch (\Exception $e) {
-            ResponseService::errorResponse('Post not found.', null, 404, $e);
+            ResponseService::errorResponse('Something went wrong.', [], 500, $e->getMessage());
         }
     }
-
 
     public function likePost(Request $request)
     {

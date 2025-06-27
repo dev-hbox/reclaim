@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Post;
+use App\Models\PostReport;
+use App\Services\ResponseService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class AdminController extends Controller
 {
@@ -44,5 +48,27 @@ class AdminController extends Controller
         } catch (Exception $e) {
             return redirect()->back()->withError($e->getMessage());
         }
+    }
+
+    public function handlePostReport(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'report_id' => 'required|exists:post_reports,id',
+            'status' => 'required|in:approved,rejected'
+        ]);
+
+        if ($validator->fails()) {
+            return ResponseService::validationError($validator->errors()->first());
+        }
+
+        $report = PostReport::findOrFail($request->report_id);
+        $report->status = $request->status;
+        $report->save();
+
+        if ($report->status === 'approved') {
+            Post::where('id', $report->post_id)->delete();
+        }
+
+        return ResponseService::successResponse("Report status updated to {$report->status}.");
     }
 }
