@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CommitmentController;
 use App\Http\Controllers\Api\PanicController;
+use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\ReflectionController;
@@ -71,4 +72,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/lessons', [LessonController::class, 'allLessons']);
     Route::post('/save-lesson', [SaveLessonController::class, 'saveLesson']);
     Route::get('/save-lesson-list', [SaveLessonController::class, 'saveLessonList']);
+
+    // Post  Routes
+    Route::post('create', [PostController::class, 'createPost']);
+    Route::get('posts', [PostController::class, 'getAllPosts']);
+    Route::get('post/{id}', [PostController::class, 'getSinglePost']);
 });
