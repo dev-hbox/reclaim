@@ -28,6 +28,7 @@ class ProfileController extends Controller
     public function createProfile(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'user_id' => 'required|integer',
             'name' => 'required|string',
             'age' => 'required|numeric',
             'gender' => 'required|in:male,female,other',
@@ -42,7 +43,6 @@ class ProfileController extends Controller
         }
 
         try {
-            // Handle avatar
             $avatar = 'uploads/profile/user-default.png';
             if ($request->hasFile('avatar')) {
                 $filename = time() . '.' . $request->avatar->getClientOriginalExtension();
@@ -50,21 +50,27 @@ class ProfileController extends Controller
                 $avatar = 'uploads/profile/' . $filename;
             }
 
-            // Create profile without user_id (will be linked after login)
+            // Profile creation
             $profile = Profile::create([
                 'name' => $request->name,
                 'age' => $request->age,
                 'gender' => $request->gender,
                 'avatar' => $avatar,
-                'user_id' => null, // Initially null
+                'user_id' => $request->user_id,
             ]);
 
-            // Save user answers and calculate score
             $totalScore = 0;
+
             foreach ($request->answers as $answer) {
                 $answerModel = Answer::find($answer['answer_id']);
                 if ($answerModel) {
                     $totalScore += $answerModel->points;
+
+                    UserAnswer::create([
+                        'user_id'   => $request->user_id, // add this column in user_answers if needed
+                        'question_id'  => $answer['question_id'],
+                        'answer_id'    => $answer['answer_id'],
+                    ]);
                 }
             }
 
@@ -72,89 +78,15 @@ class ProfileController extends Controller
 
             $message = $this->getRiskLevelMessage($totalScore, $request->name);
 
-            ResponseService::successResponse(
-                'Profile created successfully (without user_id).',
-                [
-                    'risk_score'      => $totalScore,
-                    'welcome_message' => $message,
-                    'profile'         => $profile,
-                ]
-            );
+            ResponseService::successResponse('Profile created successfully', [
+                'risk_score' => $totalScore,
+                'welcome_message' => $message,
+                'profile' => $profile,
+            ]);
         } catch (\Exception $e) {
             ResponseService::errorResponse('Error creating profile.', null, 500, $e);
         }
     }
-
-    // public function updateProfile(Request $request)
-    // {
-    //     $validator = Validator::make($request->all(), [
-    //         'name' => 'required|string',
-    //         'age' => 'required|numeric',
-    //         'gender' => 'required|string',
-    //         'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-    //         'answers' => 'required|array',
-    //         'answers.*.question_id' => 'required|exists:questions,id',
-    //         'answers.*.answer_id' => 'required|exists:answers,id',
-    //     ]);
-
-    //     if ($validator->fails()) {
-    //         ResponseService::validationError($validator->errors()->first());
-    //     }
-
-    //     try {
-    //         $user = Auth::user();
-    //         $profile = Profile::where('user_id', $user->id)->first();
-
-    //         if (!$profile) {
-    //             ResponseService::errorResponse('Profile not found.', null, 404);
-    //         }
-
-    //         // Handle avatar upload
-    //         if ($request->hasFile('avatar')) {
-    //             $filename = time() . '.' . $request->avatar->getClientOriginalExtension();
-    //             $request->avatar->move(public_path('uploads/profile/'), $filename);
-    //             $profile->avatar = '/uploads/profile/' . $filename;
-    //         }
-
-    //         // Update basic profile info
-    //         $profile->update([
-    //             'name'   => $request->name,
-    //             'age'    => $request->age,
-    //             'gender' => $request->gender,
-    //         ]);
-
-    //         // Update user answers and calculate new risk score
-    //         $totalScore = 0;
-    //         foreach ($request->answers as $answer) {
-    //             UserAnswer::updateOrCreate(
-    //                 [
-    //                     'user_id' => $user->id,
-    //                     'question_id' => $answer['question_id']
-    //                 ],
-    //                 ['answer_id' => $answer['answer_id']]
-    //             );
-
-    //             $answerModel = Answer::find($answer['answer_id']);
-    //             if ($answerModel) {
-    //                 $totalScore += $answerModel->points;
-    //             }
-    //         }
-
-    //         $profile->update(['risk_score' => $totalScore]);
-
-    //         ResponseService::successResponse(
-    //             'Profile updated successfully.',
-    //             ['profile' => $profile]
-    //         );
-    //     } catch (\Exception $e) {
-    //         ResponseService::errorResponse(
-    //             'An error occurred while updating the profile.',
-    //             null,
-    //             500,
-    //             $e
-    //         );
-    //     }
-    // }
 
     public function updateProfile(Request $request)
     {

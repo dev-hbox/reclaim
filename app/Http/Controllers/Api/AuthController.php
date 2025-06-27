@@ -107,8 +107,12 @@ class AuthController extends Controller
         $user->otp = null; // Clear OTP
         $user->save();
 
+
         ResponseService::successResponse(
-            'Email verification successful. You can now log in.'
+            'Email verification successful. You can now log in.',
+            [
+                'user'  => $user
+            ]
         );
     }
 
@@ -171,13 +175,14 @@ class AuthController extends Controller
             $user->update(['device_token' => $request->device_token]);
         }
 
-        // 🔄 Link anonymous profile if it exists (optional logic - adjust as per your criteria)
-        $unclaimedProfile = Profile::whereNull('user_id')->orderBy('created_at', 'desc')->first();
+        //  Link anonymous profile if it exists (optional logic - adjust as per your criteria)
+        // $unclaimedProfile = Profile::whereNull('user_id')->orderBy('created_at', 'desc')->first();
+
         $profile = Profile::where('user_id', $user->id)->first();
 
-        if ($unclaimedProfile) {
-            $unclaimedProfile->update(['user_id' => $user->id]);
-        }
+        // if ($unclaimedProfile) {
+        //     $unclaimedProfile->update(['user_id' => $user->id]);
+        // }
         $user['profile_name'] = $profile->name ?? '';
         $user['profile_gender'] = $profile->gender ?? '';
         $user['profile_image'] = $profile->avatar ?? '';
