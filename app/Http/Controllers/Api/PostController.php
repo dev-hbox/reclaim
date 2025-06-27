@@ -51,7 +51,50 @@ class PostController extends Controller
 
     public function getAllPosts()
     {
-        $posts = Post::with('user.profile', 'comments', 'likes')->latest()->get();
+        $authUserId = Auth::id();
+
+        $posts = Post::whereDoesntHave('reports', function ($q) use ($authUserId) {
+            $q->where('user_id', $authUserId);
+        })->with([
+            'user.profile',
+            'likes' => function ($query) {
+                $query->whereNotNull('post_id');
+            },
+            'comments.user.profile',
+            'comments.likes' => function ($query) {
+                $query->whereNotNull('comment_id');
+            }
+        ])->latest()->get()->map(function ($post) use ($authUserId) {
+            return [
+                'id'          => $post->id,
+                'title'       => $post->title,
+                'content'     => $post->content,
+                'image'       => $post->image,
+                'user'        => [
+                    'id'      => $post->user->id,
+                    'profile' => $post->user->profile,
+                ],
+                'likes_count' => $post->likes->count(),
+                'is_liked'    => $post->likes->where('user_id', $authUserId)->isNotEmpty(),
+
+                'comments' => $post->comments->map(function ($comment) use ($authUserId) {
+                    return [
+                        'id'          => $comment->id,
+                        'comment'     => $comment->comment,
+                        'user'        => [
+                            'id'      => $comment->user->id,
+                            'name'    => $comment->user->name,
+                            'profile' => $comment->user->profile,
+                        ],
+                        'likes_count' => $comment->likes->count(),
+                        'is_liked'    => $comment->likes->where('user_id', $authUserId)->isNotEmpty(),
+                        'created_at'  => $comment->created_at->toDateTimeString(),
+                    ];
+                }),
+
+
+            ];
+        });
 
         ResponseService::successResponse('Posts fetched successfully.', $posts);
     }
@@ -59,17 +102,63 @@ class PostController extends Controller
     public function getSinglePost($id)
     {
         try {
-            $post = Post::with([
-                'user:id,name',
-                'comments.user:id,name',
-                'likes'
+            $authUserId = Auth::id();
+
+            $post = Post::whereDoesntHave('reports', function ($q) use ($authUserId) {
+                $q->where('user_id', $authUserId);
+            })->with([
+                'user.profile',
+                'likes' => function ($query) {
+                    $query->whereNotNull('post_id');
+                },
+                'comments.user.profile',
+                'comments.likes' => function ($query) {
+                    $query->whereNotNull('comment_id');
+                },
+                'reports' // Needed to detect if current user reported it
             ])->findOrFail($id);
 
-            ResponseService::successResponse('Post fetched successfully.', $post);
+            // Check if current user has reported this post
+            $isReported = $post->reports->where('user_id', $authUserId)->isNotEmpty();
+
+            $formattedPost = [
+                'id'           => $post->id,
+                'title'        => $post->title,
+                'content'      => $post->content,
+                'image'        => $post->image,
+                'created_at'   => $post->created_at->toDateTimeString(),
+
+                'user'         => [
+                    'id'      => $post->user->id,
+                    'profile' => $post->user->profile,
+                ],
+
+                'likes_count'  => $post->likes->count(),
+                'is_liked'     => $post->likes->where('user_id', $authUserId)->isNotEmpty(),
+                'is_reported'  => $isReported,
+
+                'comments'     => $post->comments->map(function ($comment) use ($authUserId) {
+                    return [
+                        'id'           => $comment->id,
+                        'comment'      => $comment->comment,
+                        'created_at'   => $comment->created_at->toDateTimeString(),
+                        'likes_count'  => $comment->likes->count(),
+                        'is_liked'     => $comment->likes->where('user_id', $authUserId)->isNotEmpty(),
+                        'user'         => [
+                            'id'      => $comment->user->id,
+                            'name'    => $comment->user->name,
+                            'profile' => $comment->user->profile,
+                        ]
+                    ];
+                }),
+            ];
+
+            ResponseService::successResponse('Post fetched successfully.', $formattedPost);
         } catch (\Exception $e) {
             ResponseService::errorResponse('Post not found.', null, 404, $e);
         }
     }
+
 
     public function likePost(Request $request)
     {
@@ -93,13 +182,17 @@ class PostController extends Controller
         }
     }
 
-
     public function addComment(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'post_id' => 'required|exists:posts,id',
             'comment' => 'required|string'
         ]);
+
+        if ($validator->fails()) {
+            ResponseService::validationError($validator->errors()->first());
+        }
+
 
         $user = Auth::user();
 
@@ -114,27 +207,43 @@ class PostController extends Controller
 
     public function likeComment(Request $request)
     {
-        $request->validate(['comment_id' => 'required|exists:comments,id']);
+        $validator = Validator::make($request->all(), [
+            'comment_id' => 'required|exists:comments,id',
+        ]);
+
+        if ($validator->fails()) {
+            return ResponseService::validationError($validator->errors()->first());
+        }
 
         $user = Auth::user();
 
-        $like = Comment::where('comment_id', $request->comment_id)->where('user_id', $user->id)->first();
+        // Check if the user already liked this comment
+        $like = Like::where('comment_id', $request->comment_id)
+            ->where('user_id', $user->id)
+            ->first();
 
         if ($like) {
             $like->delete();
-            ResponseService::successResponse('Comment unliked.');
+            return ResponseService::successResponse('Comment unliked.');
         } else {
-            Comment::create(['comment_id' => $request->comment_id, 'user_id' => $user->id]);
-            ResponseService::successResponse('Comment liked.');
+            Like::create([
+                'user_id'    => $user->id,
+                'comment_id' => $request->comment_id,
+            ]);
+            return ResponseService::successResponse('Comment liked.');
         }
     }
 
     public function reportPost(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'post_id' => 'required|exists:posts,id',
             'reason'  => 'required|string'
         ]);
+
+        if ($validator->fails()) {
+            ResponseService::validationError($validator->errors()->first());
+        }
 
         $user = Auth::user();
 
@@ -149,6 +258,6 @@ class PostController extends Controller
             'reason'  => $request->reason
         ]);
 
-        return ResponseService::successResponse('Post reported successfully.', $report);
+        ResponseService::successResponse('Post reported successfully.', $report);
     }
 }

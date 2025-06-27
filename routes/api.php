@@ -73,8 +73,16 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/save-lesson', [SaveLessonController::class, 'saveLesson']);
     Route::get('/save-lesson-list', [SaveLessonController::class, 'saveLessonList']);
 
-    // Post  Routes
+    // Community / Post  Routes
     Route::post('create', [PostController::class, 'createPost']);
     Route::get('posts', [PostController::class, 'getAllPosts']);
     Route::get('post/{id}', [PostController::class, 'getSinglePost']);
+    Route::post('like-post', [PostController::class, 'likePost']);
+
+    // Comments 
+    Route::post('like-comment', [PostController::class, 'likeComment']);
+    Route::post('add-comment', [PostController::class, 'addComment']);
+
+    // Post Report
+    Route::post('report-post', [PostController::class, 'reportPost']);
 });
