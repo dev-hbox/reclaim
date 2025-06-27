@@ -122,7 +122,6 @@ class CommitmentController extends Controller
 
     public function updateStatusCommit(Request $request)
     {
-        // Validate the input data
         $validator = Validator::make($request->all(), [
             'id' => 'required|exists:commitments,id',
             'status' => 'required|in:inprogress,fulfilled',
@@ -135,7 +134,8 @@ class CommitmentController extends Controller
         try {
             $userID = Auth::user()->id;
             $commit = Commitment::findOrFail($request->id);
-            if ($commit->user_id !== $userID) {
+
+            if ($commit->user_id != $userID) {
                 ResponseService::errorResponse('Unauthorized.', null, 403);
             }
 
