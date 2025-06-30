@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CommitmentController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PanicController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProfileController;
@@ -44,6 +45,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/all-users', [AuthController::class, 'allUsers']);
     Route::get('/single-user', [AuthController::class, 'singleUser']);
     Route::post('/tast-category', [ProfileController::class, 'updateTaskCategoryPreference']);
+    Route::post('/delete-account', [AuthController::class, 'deleteAccount']);
 
     // google login 
     Route::post('/auth-google', [AuthController::class, 'googleLogin']);
@@ -85,4 +87,11 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Post Report
     Route::post('report-post', [PostController::class, 'reportPost']);
+
+
+    // Test Notification 
+    Route::get('notifications', [NotificationController::class, 'getNotifications']);
+    Route::post('mark-notification', [NotificationController::class, 'markNotificationAsRead']);
+
+    Route::post('test-fcm', [AuthController::class, 'sendTestNotification']);
 });

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\ResponseService;
 use App\Mail\{Verification};
-use App\Models\{DailyAffirmative, Profile, Question, User};
+use App\Models\{Commitment, DailyAffirmative, Profile, Question, SaveLesson, User};
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -146,7 +146,6 @@ class AuthController extends Controller
         ResponseService::successResponse('Password has been changed successfully.');
     }
 
-
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -275,5 +274,34 @@ class AuthController extends Controller
         }
 
         ResponseService::successResponse('Affirmation fetched.', $affirmation);
+    }
+    public function deleteAccount()
+    {
+        $user = Auth::user();
+
+        // Delete direct relationships
+        $user->profile()?->delete();
+        $user->userAnswers()->delete();
+        $user->dailyReflections()->delete();
+        $user->progress()?->delete();
+        $user->panicTasks()->delete();
+        $user->posts()->delete();
+        $user->comments()->delete();
+        $user->likes()->delete();
+
+        // Delete commitments
+        Commitment::where('user_id', $user->id)->each(function ($commitment) {
+            $commitment->delete();
+        });
+
+        // Delete saved lessons
+        SaveLesson::where('user_id', $user->id)->each(function ($lesson) {
+            $lesson->delete();
+        });
+
+        // Finally delete the user
+        $user->delete();
+
+        return ResponseService::successResponse('Account and data deleted successfully.');
     }
 }
