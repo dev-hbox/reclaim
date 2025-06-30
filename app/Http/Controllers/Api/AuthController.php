@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\ResponseService;
 use App\Mail\{Verification};
-use App\Models\{Commitment, DailyAffirmative, Profile, Question, SaveLesson, User};
+use App\Models\{Commitment, DailyAffirmative, Post, Profile, Question, SaveLesson, User};
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -275,6 +275,7 @@ class AuthController extends Controller
 
         ResponseService::successResponse('Affirmation fetched.', $affirmation);
     }
+
     public function deleteAccount()
     {
         $user = Auth::user();
@@ -285,16 +286,19 @@ class AuthController extends Controller
         $user->dailyReflections()->delete();
         $user->progress()?->delete();
         $user->panicTasks()->delete();
-        $user->posts()->delete();
-        $user->comments()->delete();
-        $user->likes()->delete();
 
-        // Delete commitments
+        // $posts = $user->posts;  
+        $posts = Post::where('user_id', $user->id)->get();
+        foreach ($posts as $post) {
+            $post->comments()->delete();
+            $post->likes()->delete();
+            $post->delete();
+        }
+        // Delete other models related to the user
         Commitment::where('user_id', $user->id)->each(function ($commitment) {
             $commitment->delete();
         });
 
-        // Delete saved lessons
         SaveLesson::where('user_id', $user->id)->each(function ($lesson) {
             $lesson->delete();
         });
@@ -302,6 +306,6 @@ class AuthController extends Controller
         // Finally delete the user
         $user->delete();
 
-        return ResponseService::successResponse('Account and data deleted successfully.');
+        return ResponseService::successResponse('Account and all related data deleted successfully.');
     }
 }
