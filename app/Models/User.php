@@ -55,14 +55,13 @@ class User extends Authenticatable
 
     public function profile()
     {
-        return $this->hasOne(Profile::class, 'user_id', 'id');
+        return $this->hasOne(Profile::class);
     }
 
     public function userAnswers(): HasMany
     {
         return $this->hasMany(UserAnswer::class, 'user_id', 'id');
     }
-
 
     public function dailyReflections()
     {

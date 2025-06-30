@@ -49,4 +49,9 @@ return [
         'private_key' => storage_path(env('APPLE_PRIVATE_KEY_PATH')),
     ],
 
+    'firebase' => [
+        'project_id' => env('FIREBASE_PROJECT_ID'),
+    ],
+
+
 ];
