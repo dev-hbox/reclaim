@@ -3,8 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\ResponseService;
+use App\Models\Answer;
 use App\Models\Profile;
 use App\Models\User;
+use App\Models\UserAnswer;
+use App\Models\UserProgress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -14,180 +18,176 @@ class ProfileController extends Controller
     public function user()
     {
         $user = Auth::user();
-        return response()->json([
-            'success' => true,
-            'data' => $user,
-            'message' => 'Profile retrieved successfully.',
 
-        ], 200);
+        ResponseService::successResponse(
+            'Profile retrieved successfully.',
+            $user
+        );
     }
 
     public function createProfile(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'first_name' => 'required',
-            'last_name' => 'required',
-            'date_of_birth' => 'required|date',
-            'phone' => 'required',
-            'weight' => 'required|numeric|regex:/^\d+(\.\d{1,3})?$/',
-            'height' => 'required|numeric|regex:/^\d+(\.\d{1,3})?$/',
-            'fitness_experience' => 'required',
-            'difficulties' => 'required',
-            'interests_id' => 'required'
+            'user_id' => 'required|integer',
+            'name' => 'required|string',
+            'age' => 'required|numeric',
+            'gender' => 'required|in:male,female,other',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'answers' => 'required|array',
+            'answers.*.question_id' => 'required|exists:questions,id',
+            'answers.*.answer_id' => 'required|exists:answers,id',
         ]);
-        $data = $request->all();
 
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed.',
-                'data' =>  $validator->errors(),
-            ], 422);
-        } else {
-            try {
-                $user = Auth::user();
+            ResponseService::validationError($validator->errors()->first());
+        }
 
-                $avatar = NULL;
-                if ($request->hasFile('avatar')) {
-                    $filename = time() . '.' . request()->avatar->getClientOriginalExtension();
-                    $request->avatar->move(public_path('uploads/profile/'), $filename);
-                    $avatar = '/uploads/profile/' . $filename;
-                } else {
-                    $avatar = '/uploads/profile/user-default.png';
-                }
-
-
-                $interest = $request->input('interests_id');
-
-                $checkProfile = Profile::where('user_id', $user->id)->exists();
-                if ($checkProfile) {
-                    return $this->success($checkProfile, 'Profile already exist');
-                } else {
-                    $profile = Profile::create([
-                        'first_name' => $data['first_name'],
-                        'last_name' =>   $data['last_name'],
-                        'about' => $data['about'],
-                        'date_of_birth' => $data['date_of_birth'],
-                        'phone' => $data['phone'],
-                        'weight' => $data['weight'],
-                        'weight_unit' => $data['weight_unit'],
-                        'height' => $data['height'],
-                        'height_unit' => $data['height_unit'],
-                        'fitness_experience' => $data['fitness_experience'],
-                        'difficulties' => $data['difficulties'],
-                        'avatar' => $avatar,
-                        'user_id' => $user->id,
-                    ]);
-
-                    foreach ($interest as $interestID) {
-                        $findinterestID = interest::where("id", $interestID)->first();
-                        userInterest::create([
-                            'interest_id' => $findinterestID->id,
-                            'profile_id' => $user->id,
-                        ]);
-                    }
-                    return $this->success($profile, 'Profile has been created successfully.');
-                }
-            } catch (\Exception $e) {
-                return response()->json(['error' => $e->getMessage()], 500);
+        try {
+            $avatar = 'uploads/profile/user-default.png';
+            if ($request->hasFile('avatar')) {
+                $filename = time() . '.' . $request->avatar->getClientOriginalExtension();
+                $request->avatar->move(public_path('uploads/profile/'), $filename);
+                $avatar = 'uploads/profile/' . $filename;
             }
+
+            // Profile creation
+            $profile = Profile::create([
+                'name' => $request->name,
+                'age' => $request->age,
+                'gender' => $request->gender,
+                'avatar' => $avatar,
+                'user_id' => $request->user_id,
+            ]);
+
+            $totalScore = 0;
+
+            foreach ($request->answers as $answer) {
+                $answerModel = Answer::find($answer['answer_id']);
+                if ($answerModel) {
+                    $totalScore += $answerModel->points;
+
+                    UserAnswer::create([
+                        'user_id'   => $request->user_id, // add this column in user_answers if needed
+                        'question_id'  => $answer['question_id'],
+                        'answer_id'    => $answer['answer_id'],
+                    ]);
+                }
+            }
+
+            $profile->update(['risk_score' => $totalScore]);
+
+            $message = $this->getRiskLevelMessage($totalScore, $request->name);
+
+            ResponseService::successResponse('Profile created successfully', [
+                'risk_score' => $totalScore,
+                'welcome_message' => $message,
+                'profile' => $profile,
+            ]);
+        } catch (\Exception $e) {
+            ResponseService::errorResponse('Error creating profile.', null, 500, $e);
         }
     }
 
-    public function editProfile(Request $request)
+    public function updateProfile(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'name'   => 'required|string',
+            'age'    => 'required|numeric',
+            'gender' => 'required|in:male,female,other',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            ResponseService::validationError($validator->errors()->first());
+        }
+
         try {
             $user = Auth::user();
-            $finduser = User::findOrFail($user->id);
+            $profile = Profile::where('user_id', $user->id)->first();
 
-            $editProfile = profile::where('user_id', $finduser->id)->first();
-
-            if ($request->has('first_name')) {
-                $editProfile->first_name = $request->first_name;
-            }
-            if ($request->has('last_name')) {
-                $editProfile->last_name = $request->last_name;
-            }
-            if ($request->has('about')) {
-                $editProfile->about = $request->about;
-            }
-            if ($request->has('date_of_birth')) {
-                $editProfile->date_of_birth = $request->date_of_birth;
-            }
-            if ($request->has('phone')) {
-                $editProfile->phone = $request->phone;
-            }
-            if ($request->has('weight')) {
-                $editProfile->weight = $request->weight;
-            }
-            if ($request->has('weight_unit')) {
-                $editProfile->weight_unit = $request->weight_unit;
-            }
-            if ($request->has('height')) {
-                $editProfile->height = $request->height;
-            }
-            if ($request->has('height_unit')) {
-                $editProfile->height_unit = $request->height_unit;
-            }
-            if ($request->has('fitness_experience')) {
-                $editProfile->fitness_experience = $request->fitness_experience;
-            }
-            if ($request->has('difficulties')) {
-                $editProfile->difficulties = $request->difficulties;
+            if (!$profile) {
+                ResponseService::errorResponse('Profile not found.', null, 404);
             }
 
-            if ($request->has('interests_id')) {
-                $interests = $request->input('interests_id');
-                $existingInterests = userInterest::where('profile_id', $editProfile->id)->pluck('interest_id')->toArray();
-
-                // Calculate interests to add and remove
-                $interestsToAdd = array_diff($interests, $existingInterests);
-                $interestsToRemove = array_diff($existingInterests, $interests);
-
-                // Add new interests
-                foreach ($interestsToAdd as $interestID) {
-                    userInterest::create([
-                        'interest_id' => $interestID,
-                        'profile_id' => $editProfile->id,
-                    ]);
-                }
-
-                // Remove interests that were deselected
-                userInterest::where('profile_id', $editProfile->id)
-                    ->whereIn('interest_id', $interestsToRemove)
-                    ->delete();
-            }
-
+            // Handle avatar upload
             if ($request->hasFile('avatar')) {
-                $filename = time() . '.' . request()->avatar->getClientOriginalExtension();
+                $filename = time() . '.' . $request->avatar->getClientOriginalExtension();
                 $request->avatar->move(public_path('uploads/profile/'), $filename);
-                $editProfile->avatar = '/uploads/profile/' . $filename;
+                $profile->avatar = '/uploads/profile/' . $filename;
             }
 
+            // Update profile fields
+            $profile->name   = $request->name;
+            $profile->age    = $request->age;
+            $profile->gender = $request->gender;
+            $profile->save();
 
-            $editProfile->save();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Profile has been updated successfully.',
-                'data' => $editProfile,
-
-            ], 200);
+            ResponseService::successResponse('Profile updated successfully.', ['profile' => $profile]);
         } catch (\Exception $e) {
-            return $e->getMessage();
+            ResponseService::errorResponse('An error occurred while updating the profile.', null, 500, $e);
         }
     }
 
     public function profile()
     {
         $user = Auth::user();
-        $profile = User::with(['profile.userinterest.interest'])->where('id', $user->id)->first();
-        // return $this->success($profile, 'Profile Data Retrieved successfully.');
-        return response()->json([
-            'success' => true,
-            'message' => 'Profile data retrieved successfully.',
-            'data' => $profile,
 
-        ], 200);
+        $profile = User::with([
+            'profile',
+            'userAnswers.question',
+            'userAnswers.answer'
+        ])->find($user->id);
+
+        if (!$profile) {
+            ResponseService::errorResponse('User profile not found.', null, 404);
+        }
+
+        $message = $this->getRiskLevelMessage(
+            $profile->profile->risk_score ?? 0,
+            $profile->profile->name ?? ''
+        );
+
+        ResponseService::successResponse(
+            'Profile data retrieved successfully.',
+            [
+                'welcome_message' => $message,
+                'profile'         => $profile,
+            ]
+        );
+    }
+
+    private function getRiskLevelMessage($score, $name)
+    {
+        if ($score >= 30) {
+            return "Welcome $name to Your Journey. You are not alone. Your struggle is significant, but it doesn’t define you. We’re here to help you reclaim your life, one step at a time. $name, lean into the support available and stay committed to your journey of healing and renewal.";
+        } elseif ($score >= 21) {
+            return "Welcome $name to Your Journey. Your challenges are real, but your desire for change is stronger. Building new habits and finding the right support will be key. $name, let’s take this journey step by step, with guidance and encouragement along the way.";
+        } elseif ($score >= 11) {
+            return "Welcome $name to Your Journey. Your commitment to change is evident. You’ve already shown determination by taking the first steps toward recovery. Focus on building consistent habits and strengthening your resilience to overcome setbacks. $name, we’re here to guide and support you through every challenge.";
+        } else {
+            return "Welcome $name to Your Journey. You’ve already made progress and shown remarkable dedication. We’ll help you keep growing and strengthening your commitment to freedom and renewal. $name, stay consistent, and keep building on the momentum you’ve already created.";
+        }
+    }
+
+    public function updateTaskCategoryPreference(Request $request)
+    {
+        $request->validate([
+            'task_category' => 'required|in:mental,physical,breathing,habit,random',
+            'task_intensity' => 'required|in:light,moderate,deep',
+        ]);
+        $user = Auth::user();
+        $user->profile()->update([
+            'task_category' => $request->task_category,
+            'task_intensity' => $request->task_intensity,
+        ]);
+        $data = [
+            'task_category' => $user->profile->task_category,
+            'task_intensity' => $user->profile->task_intensity,
+        ];
+
+        return ResponseService::successResponse(
+            'Task category updated successfully.',
+            $data
+        );
     }
 }

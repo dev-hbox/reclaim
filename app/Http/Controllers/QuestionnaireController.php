@@ -20,7 +20,6 @@ class QuestionnaireController extends Controller
         return view('Admin.Quotes.add');
     }
 
-
     // Admin adds a new question with multiple-choice answers
     public function store(Request $request)
     {
