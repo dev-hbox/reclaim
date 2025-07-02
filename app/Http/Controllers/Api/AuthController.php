@@ -196,38 +196,46 @@ class AuthController extends Controller
         );
     }
 
-    public function googleLogin(Request $request)
+    public function googleSignIn(Request $request)
     {
-        try {
-            $request->validate([
-                'token' => 'required|string',
-                'device_token' => 'nullable|string'
-            ]);
 
-            $googleUser = Socialite::driver('google')->stateless()->userFromToken($request->token);
+        $validator = Validator::make($request->all(), [
+            'provider'   => 'required|string|in:google',
+            'email'      => 'required|email',
+            'name'       => 'required|string',
+            'google_id'  => 'required|string',
+            'avatar'     => 'nullable|url'
+        ]);
 
-            if (!$googleUser->getEmail()) {
-                ResponseService::errorResponse('Google account does not have an email.', null, 400);
-            }
-
-            $user = User::firstOrCreate(
-                ['email' => $googleUser->getEmail()],
-                [
-                    'password' => Hash::make(Str::random(16)),
-                    'otp_status' => 1,
-                    'device_token' => $request->device_token,
-                ]
-            );
-
-            $token = $user->createToken('ApiToken')->plainTextToken;
-
-            ResponseService::successResponse('Google login successful.', [
-                'user'  => $user,
-                'token' => $token
-            ]);
-        } catch (\Exception $e) {
-            ResponseService::errorResponse('Google login failed.', null, 500, $e);
+        if ($validator->fails()) {
+            ResponseService::validationError($validator->errors()->first());
         }
+
+        $user = User::where('google_id', $request->google_id)
+            ->orWhere('email', $request->email)
+            ->first();
+
+        if (!$user) {
+            $user = User::create([
+                'name'         => $request->name,
+                'email'        => $request->email,
+                'google_id'    => $request->google_id,
+                'device_token' => $request->device_token,
+                'password'     => Hash::make(Str::random(16)),
+            ]);
+        } else {
+            // Optional: update device token on each login
+            $user->update([
+                'device_token' => $request->device_token,
+            ]);
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        ResponseService::successResponse('Google sign-in successful', [
+            'token'    => $token,
+            'user'     => $user
+        ]);
     }
 
     public function appleLogin(Request $request)
