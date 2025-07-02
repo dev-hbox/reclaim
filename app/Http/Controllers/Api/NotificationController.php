@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
+use App\Services\NotificationService;
 use App\Services\ResponseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -39,5 +40,29 @@ class NotificationController extends Controller
         $notification->status = 'read';
         $notification->save();
         ResponseService::successResponse('Notification marked as read.', $notification);
+    }
+
+    public function sendTestNotification(Request $request)
+    {
+        $user = Auth::user();
+
+        $token = 'eAnUx37_TiuB7Jum1tDpt2:APA91bE84aqs2Up_7S_sAJ4Vj9wHk0tRNFKBENnygB7blbx8BbenJnNdx6PhzC17bu7JOOo2NLquiGZJGkZtoU6J6GzOG5NH2TMVGRbpWi8p57xOWeBjMVE';
+        $title = 'Test Notification';
+        $body = 'This is a test notification from the server.';
+
+        $data = [
+            'user_id' => $user->id,
+            'custom_key' => 'custom_value',
+
+        ];
+
+        $response = NotificationService::sendFcmNotification(
+            [$token],
+            $title,
+            $body,
+            $data
+        );
+
+        ResponseService::successResponse('Test notification sent.', $response);
     }
 }

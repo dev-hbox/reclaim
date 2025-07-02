@@ -25,7 +25,7 @@ Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 
-Route::post('google-login', [AuthController::class, 'googleLogin']);
+Route::post('google-login', [AuthController::class, 'googleSignIn']);
 Route::post('auth/apple', [AuthController::class, 'appleLogin']);
 
 
@@ -46,9 +46,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/single-user', [AuthController::class, 'singleUser']);
     Route::post('/tast-category', [ProfileController::class, 'updateTaskCategoryPreference']);
     Route::post('/delete-account', [AuthController::class, 'deleteAccount']);
-
-    // google login 
-    Route::post('/auth-google', [AuthController::class, 'googleLogin']);
 
     // Evening Recollect Routes 
     Route::post('/evening-recollect', [ReflectionController::class, 'store']);
@@ -92,6 +89,5 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // Test Notification 
     Route::get('notifications', [NotificationController::class, 'getNotifications']);
     Route::post('mark-notification', [NotificationController::class, 'markNotificationAsRead']);
-
-    Route::post('test-fcm', [AuthController::class, 'sendTestNotification']);
+    Route::post('test-fcm', [NotificationController::class, 'sendTestNotification']);
 });

@@ -22,6 +22,8 @@ return new class extends Migration
             $table->boolean('profile_status')->default(0);
             $table->boolean('status')->default(1);
             $table->text('device_token')->nullable();
+            $table->string('google_id')->nullable()->unique();
+            $table->string('apple_id')->nullable()->unique();
             $table->rememberToken();
             $table->timestamps();
         });
