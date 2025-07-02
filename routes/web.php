@@ -5,12 +5,23 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\Questionnaire;
 use App\Http\Controllers\QuestionnaireController;
 use Illuminate\Support\Facades\Route;
+use Google\Client;
 
 // Route::get('/', function () {
 //     return view('welcome');
 // });
 
 Route::get('/', [LoginController::class, 'index'])->name('index');
+
+
+
+
+Route::get('/test-google-client', function () {
+    $client = new Client();
+    return 'Google Client is working.';
+});
+
+
 
 // Authentication Routes
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');

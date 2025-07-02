@@ -45,8 +45,7 @@ class NotificationController extends Controller
     public function sendTestNotification(Request $request)
     {
         $user = Auth::user();
-
-        $token = 'eAnUx37_TiuB7Jum1tDpt2:APA91bE84aqs2Up_7S_sAJ4Vj9wHk0tRNFKBENnygB7blbx8BbenJnNdx6PhzC17bu7JOOo2NLquiGZJGkZtoU6J6GzOG5NH2TMVGRbpWi8p57xOWeBjMVE';
+        $token = $request->token;
         $title = 'Test Notification';
         $body = 'This is a test notification from the server.';
 

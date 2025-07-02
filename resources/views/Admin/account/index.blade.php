@@ -430,13 +430,13 @@
                                                                 <!--begin::Label-->
                                                                 <label><strong>Interests :</strong></label><br><br>
                                                                 @if ($interests != null)
-                                                                    @foreach ($interests as $interest)
-                                                                        <label>
-                                                                            <input type="checkbox" name="interests[]"
-                                                                                value="{{ $interest->id }}">
-                                                                            {{ $interest->name }}
-                                                                        </label><br>
-                                                                    @endforeach
+                                                                @foreach ($interests as $interest)
+                                                                <label>
+                                                                    <input type="checkbox" name="interests[]"
+                                                                        value="{{ $interest->id }}">
+                                                                    {{ $interest->name }}
+                                                                </label><br>
+                                                                @endforeach
                                                                 @endif
 
                                                                 {{-- <label><input type="checkbox" name="Interest[]"
@@ -545,13 +545,13 @@
                                 <!--begin::Card body-->
                                 <div class="card-body py-4">
                                     @if (session()->has('message'))
-                                        <div class="alert alert-success">
-                                            {{ session()->get('message') }}
-                                        </div>
+                                    <div class="alert alert-success">
+                                        {{ session()->get('message') }}
+                                    </div>
                                     @elseif(session()->has('error'))
-                                        <div class="alert alert-danger">
-                                            {{ session()->get('error') }}
-                                        </div>
+                                    <div class="alert alert-danger">
+                                        {{ session()->get('error') }}
+                                    </div>
                                     @endif
                                     <!--begin::Table-->
                                     <table class="table align-middle table-row-dashed fs-6 gy-5" id="kt_table_users">
@@ -584,154 +584,154 @@
 
                                         <tbody class="text-gray-600 fw-bold">
                                             @foreach ($users as $user)
-                                                @if ($user->roles[0]->name == 'User')
-                                                    <tr>
-                                                        <!--begin::Checkbox-->
-                                                        <td>
-                                                            <div
-                                                                class="form-check form-check-sm form-check-custom form-check-solid">
-                                                                <input class="form-check-input" type="checkbox"
-                                                                    value="1" />
-                                                            </div>
-                                                        </td>
-                                                        <!--end::Checkbox-->
+                                            @if ($user->roles[0]->name == 'User')
+                                            <tr>
+                                                <!--begin::Checkbox-->
+                                                <td>
+                                                    <div
+                                                        class="form-check form-check-sm form-check-custom form-check-solid">
+                                                        <input class="form-check-input" type="checkbox"
+                                                            value="1" />
+                                                    </div>
+                                                </td>
+                                                <!--end::Checkbox-->
 
-                                                        <!--begin::User=-->
-                                                        <td class="d-flex align-items-center">
-                                                            <!--begin:: Avatar -->
-                                                            <div
-                                                                class="symbol symbol-circle symbol-50px overflow-hidden me-3">
-                                                                <a
-                                                                    href="{{ $user->hasRole('User') ? '/admin/user-overview/' . $user->id : '#' }}">
-                                                                    <div class="symbol-label">
-                                                                        <img src="{{ $user->profile->avatar ?? asset('/uploads/profile/user-default.png') }}"
-                                                                            alt="{{ $user->username ?? '--' }}"
-                                                                            class="w-100" />
-                                                                    </div>
-                                                                </a>
+                                                <!--begin::User=-->
+                                                <td class="d-flex align-items-center">
+                                                    <!--begin:: Avatar -->
+                                                    <div
+                                                        class="symbol symbol-circle symbol-50px overflow-hidden me-3">
+                                                        <a
+                                                            href="{{ $user->hasRole('User') ? '/admin/user-overview/' . $user->id : '#' }}">
+                                                            <div class="symbol-label">
+                                                                <img src="{{ $user->profile->avatar ?? asset('/uploads/profile/user-default.png') }}"
+                                                                    alt="{{ $user->username ?? '--' }}"
+                                                                    class="w-100" />
                                                             </div>
-                                                            <!--end::Avatar-->
-                                                            <!--begin::User details-->
-                                                            <div class="d-flex flex-column">
-                                                                <a href="{{ $user->hasRole('User') ? '/admin/user-overview/' . $user->id : '#' }}"
-                                                                    class="text-gray-800 text-hover-primary mb-1">{{ ucfirst($user->username ?? '--') }}</a>
-                                                                <span>{{ $user->email }}</span>
-                                                            </div>
-                                                            <!--begin::User details-->
-                                                        </td>
-                                                        <!--end::User=-->
+                                                        </a>
+                                                    </div>
+                                                    <!--end::Avatar-->
+                                                    <!--begin::User details-->
+                                                    <div class="d-flex flex-column">
+                                                        <a href="{{ $user->hasRole('User') ? '/admin/user-overview/' . $user->id : '#' }}"
+                                                            class="text-gray-800 text-hover-primary mb-1">{{ ucfirst($user->username ?? '--') }}</a>
+                                                        <span>{{ $user->email }}</span>
+                                                    </div>
+                                                    <!--begin::User details-->
+                                                </td>
+                                                <!--end::User=-->
 
-                                                        <!--begin::Role=-->
-                                                        <td>
-                                                            {{ ucfirst($user->profile->first_name ?? '--') }}
-                                                            {{ $user->profile->last_name ?? '--' }}
-                                                            {{-- {{ date('F d, Y', strtotime($user->profile->date_of_birth ?? '--')) }} --}}
-                                                        </td>
-                                                        <!--end::Role=-->
+                                                <!--begin::Role=-->
+                                                <td>
+                                                    {{ ucfirst($user->profile->first_name ?? '--') }}
+                                                    {{ $user->profile->last_name ?? '--' }}
+                                                    {{-- {{ date('F d, Y', strtotime($user->profile->date_of_birth ?? '--')) }} --}}
+                                                </td>
+                                                <!--end::Role=-->
 
-                                                        <!--begin::Last login=-->
-                                                        <td>
-                                                            {{ $user->profile->weight ?? '--' }}
-                                                            {{ $user->profile->weight_unit ?? '--' }}
-                                                            {{-- <div class="badge badge-light fw-bolder">
+                                                <!--begin::Last login=-->
+                                                <td>
+                                                    {{ $user->profile->weight ?? '--' }}
+                                                    {{ $user->profile->weight_unit ?? '--' }}
+                                                    {{-- <div class="badge badge-light fw-bolder">
                                                             {{ $user->last_login ? Carbon\Carbon::parse($user->last_login)->diffForHumans() : 'Not logged-in yet' }}
-                                                        </div> --}}
-                                                        </td>
-                                                        <!--end::Last login=-->
+                                </div> --}}
+                                </td>
+                                <!--end::Last login=-->
 
-                                                        <!--begin::Two step=-->
-                                                        <td> {{ $user->profile->height ?? '--' }}
-                                                            {{ $user->profile->height_unit ?? '--' }}
-                                                        </td>
-                                                        <!--end::Two step=-->
+                                <!--begin::Two step=-->
+                                <td> {{ $user->profile->height ?? '--' }}
+                                    {{ $user->profile->height_unit ?? '--' }}
+                                </td>
+                                <!--end::Two step=-->
 
-                                                        <!--begin::Two step=-->
-                                                        <td>{{ $user->profile->phone ?? '--' }}</td>
-                                                        <!--end::Two step=-->
+                                <!--begin::Two step=-->
+                                <td>{{ $user->profile->phone ?? '--' }}</td>
+                                <!--end::Two step=-->
 
-                                                        <!--begin::Joined-->
-                                                        <td>{{ $user->profile->difficulties ?? '--' }}</td>
+                                <!--begin::Joined-->
+                                <td>{{ $user->profile->difficulties ?? '--' }}</td>
 
-                                                        <td>
-                                                            @if ($user->otp_status == 1)
-                                                                @if ($user->status == 1)
-                                                                    <div class="badge badge-light-success">Activate
-                                                                    </div>
-                                                                @else
-                                                                    <div class="badge badge-light-danger">Inactive
-                                                                    </div>
-                                                                @endif
-                                                            @elseif($user->otp_status == 0)
-                                                                <div class="badge badge-light-warning">OTP not verified
-                                                                </div>
-                                                            @endif
-                                                        </td>
-                                                        <!--begin::Joined-->
+                                <td>
+                                    @if ($user->otp_status == 1)
+                                    @if ($user->status == 1)
+                                    <div class="badge badge-light-success">Activate
+                                    </div>
+                                    @else
+                                    <div class="badge badge-light-danger">Inactive
+                                    </div>
+                                    @endif
+                                    @elseif($user->otp_status == 0)
+                                    <div class="badge badge-light-warning">OTP not verified
+                                    </div>
+                                    @endif
+                                </td>
+                                <!--begin::Joined-->
 
-                                                        <!--begin::Action=-->
-                                                        <td class="text-end">
-                                                            <a href="#"
-                                                                class="btn btn-light btn-active-light-primary btn-sm"
-                                                                data-kt-menu-trigger="click"
-                                                                data-kt-menu-placement="bottom-end">Actions
-                                                                <!--begin::Svg Icon | path: icons/duotune/arrows/arr072.svg-->
-                                                                <span class="svg-icon svg-icon-5 m-0">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                                                        width="24" height="24"
-                                                                        viewBox="0 0 24 24" fill="none">
-                                                                        <path
-                                                                            d="M11.4343 12.7344L7.25 8.55005C6.83579 8.13583 6.16421 8.13584 5.75 8.55005C5.33579 8.96426 5.33579 9.63583 5.75 10.05L11.2929 15.5929C11.6834 15.9835 12.3166 15.9835 12.7071 15.5929L18.25 10.05C18.6642 9.63584 18.6642 8.96426 18.25 8.55005C17.8358 8.13584 17.1642 8.13584 16.75 8.55005L12.5657 12.7344C12.2533 13.0468 11.7467 13.0468 11.4343 12.7344Z"
-                                                                            fill="currentColor" />
-                                                                    </svg>
-                                                                </span>
-                                                                <!--end::Svg Icon--></a>
-                                                            <!--begin::Menu-->
-                                                            <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-bold fs-7 w-125px py-4"
-                                                                data-kt-menu="true">
-                                                                <!--begin::Menu item-->
-                                                                <div class="menu-item px-3">
-                                                                    @if (!$user->hasRole('Admin'))
-                                                                        @if ($user->otp_status == 1)
-                                                                            @if ($user->status == 1)
-                                                                                <a href="/admin/registered-users-status/{{ $user->id }}"
-                                                                                    class="menu-link px-3">Inactive</a>
-                                                                            @else
-                                                                                <a href="/admin/registered-users-status/{{ $user->id }}"
-                                                                                    class="menu-link px-3">Activate</a>
-                                                                            @endif
-                                                                        @elseif($user->otp_status == 0)
-                                                                            <a href="#"
-                                                                                class="menu-link px-3 not-allowed">Inactive</a>
-                                                                        @endif
-                                                                    @else
-                                                                        <a href="#"
-                                                                            class="menu-link px-3 not-allowed">Inactive</a>
-                                                                    @endif
-                                                                </div>
-                                                                <!--end::Menu item-->
-                                                            </div>
-                                                            <!--end::Menu-->
-                                                        </td>
-                                                        <!--end::Action=-->
-                                                    </tr>
-                                                @endif
-                                            @endforeach
-                                            <!--end::Table row-->
-                                        </tbody>
-                                        <!--end::Table body-->
-                                    </table>
-                                    <!--end::Table-->
-                                </div>
-                                <!--end::Card body-->
+                                <!--begin::Action=-->
+                                <td class="text-end">
+                                    <a href="#"
+                                        class="btn btn-light btn-active-light-primary btn-sm"
+                                        data-kt-menu-trigger="click"
+                                        data-kt-menu-placement="bottom-end">Actions
+                                        <!--begin::Svg Icon | path: icons/duotune/arrows/arr072.svg-->
+                                        <span class="svg-icon svg-icon-5 m-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none">
+                                                <path
+                                                    d="M11.4343 12.7344L7.25 8.55005C6.83579 8.13583 6.16421 8.13584 5.75 8.55005C5.33579 8.96426 5.33579 9.63583 5.75 10.05L11.2929 15.5929C11.6834 15.9835 12.3166 15.9835 12.7071 15.5929L18.25 10.05C18.6642 9.63584 18.6642 8.96426 18.25 8.55005C17.8358 8.13584 17.1642 8.13584 16.75 8.55005L12.5657 12.7344C12.2533 13.0468 11.7467 13.0468 11.4343 12.7344Z"
+                                                    fill="currentColor" />
+                                            </svg>
+                                        </span>
+                                        <!--end::Svg Icon--></a>
+                                    <!--begin::Menu-->
+                                    <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-bold fs-7 w-125px py-4"
+                                        data-kt-menu="true">
+                                        <!--begin::Menu item-->
+                                        <div class="menu-item px-3">
+                                            @if (!$user->hasRole('Admin'))
+                                            @if ($user->otp_status == 1)
+                                            @if ($user->status == 1)
+                                            <a href="/admin/registered-users-status/{{ $user->id }}"
+                                                class="menu-link px-3">Inactive</a>
+                                            @else
+                                            <a href="/admin/registered-users-status/{{ $user->id }}"
+                                                class="menu-link px-3">Activate</a>
+                                            @endif
+                                            @elseif($user->otp_status == 0)
+                                            <a href="#"
+                                                class="menu-link px-3 not-allowed">Inactive</a>
+                                            @endif
+                                            @else
+                                            <a href="#"
+                                                class="menu-link px-3 not-allowed">Inactive</a>
+                                            @endif
+                                        </div>
+                                        <!--end::Menu item-->
+                                    </div>
+                                    <!--end::Menu-->
+                                </td>
+                                <!--end::Action=-->
+                                </tr>
+                                @endif
+                                @endforeach
+                                <!--end::Table row-->
+                                </tbody>
+                                <!--end::Table body-->
+                                </table>
+                                <!--end::Table-->
                             </div>
+                            <!--end::Card body-->
                         </div>
                     </div>
                 </div>
-                <!--begin::Footer-->
-                @include('partials.footer')
-                <!--end::Footer-->
             </div>
+            <!--begin::Footer-->
+            @include('partials.footer')
+            <!--end::Footer-->
         </div>
+    </div>
     </div>
     @include('global.footer-links')
 </body>
