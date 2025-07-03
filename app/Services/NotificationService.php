@@ -48,11 +48,13 @@ class NotificationService
 
             // Store the notification in the database
             $userId = $data['user_id'] ?? null; // Get user ID from the data to associate with the notification
+            $senderId = $data['sender_id'] ?? null; // Get user ID from the data to associate with the notification
 
             if ($userId) {
                 // If user_id exists, store the notification for the user
                 Notification::create([
                     'user_id' => $userId,
+                    'sender_id'    => $senderId, // Actor (e.g. who liked)
                     'type' => $data['type'] ?? 'default', // Add type for the notification (e.g., post_like, comment)
                     'title' => $title,
                     'message' => $body,

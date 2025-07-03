@@ -229,7 +229,10 @@ class AuthController extends Controller
                 'device_token' => $request->device_token,
             ]);
         }
-
+        $profile = Profile::where('user_id', $user->id)->first();
+        $user['profile_name'] = $profile->name ?? '';
+        $user['profile_gender'] = $profile->gender ?? '';
+        $user['profile_image'] = $profile->avatar ?? '';
         $token = $user->createToken('auth_token')->plainTextToken;
 
         ResponseService::successResponse('Google sign-in successful', [

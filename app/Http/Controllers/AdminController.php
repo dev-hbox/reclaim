@@ -41,7 +41,7 @@ class AdminController extends Controller
     {
         try {
             if (Auth::check()) {
-                return view('Admin/dashboard/index');
+                return view('dashboard/index');
             } else {
                 return redirect()->route('index');
             }

@@ -236,19 +236,40 @@ class ReflectionController extends Controller
     }
 
 
+    // private function sendLevelChangeNotification($user, $newLevel)
+    // {
+    //     $message = $newLevel > $user->progress->level ?
+    //         'Congratulations, you have leveled up!' : 'Your level has been downgraded due to recent setbacks.';
+
+    //     // You can add more logic for notification title and content based on the level change.
+    //     NotificationService::sendFcmNotification(
+    //         [$user->device_token], // Send to the user
+    //         'Level Change Notification',
+    //         $message,
+    //         [
+    //             'user_id' => $user->id,
+    //             'related_id' => $newLevel,
+    //             'related_type' => 'Level',
+    //             'type' => 'level_change'
+    //         ]
+    //     );
+    // }
+
     private function sendLevelChangeNotification($user, $newLevel)
     {
-        $message = $newLevel > $user->progress->level ?
-            'Congratulations, you have leveled up!' : 'Your level has been downgraded due to recent setbacks.';
+        $isLevelUp = $newLevel > $user->progress->level;
+        $message = $isLevelUp
+            ? 'Congratulations, you have leveled up!'
+            : 'Your level has been downgraded due to recent setbacks.';
 
-        // You can add more logic for notification title and content based on the level change.
         NotificationService::sendFcmNotification(
             [$user->device_token], // Send to the user
             'Level Change Notification',
             $message,
             [
-                'user_id' => $user->id,
-                'related_id' => $newLevel,
+                'user_id' => $user->id,                  // Receiver of the notification
+                'sender_id' => null,                     // System message; no sender
+                'related_id' => $newLevel,               // The new level number
                 'related_type' => 'Level',
                 'type' => 'level_change'
             ]

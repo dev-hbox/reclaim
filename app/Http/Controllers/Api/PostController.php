@@ -176,10 +176,11 @@ class PostController extends Controller
                 'Post Unliked',
                 $user->name . ' unliked your post: ' . $post->title,
                 [
-                    'user_id' => $user->id,
+                    'user_id' => $postOwner->id,
+                    'sender_id' => $user->id,
                     'related_id' => $post->id,
                     'related_type' => 'Post',
-                    'type' => 'unlike'
+                    'type' => 'unlike',
                 ]
             );
             ResponseService::successResponse('Post unliked.');
@@ -188,19 +189,79 @@ class PostController extends Controller
 
             // Send notification for liking
             NotificationService::sendFcmNotification(
-                [$postOwner->device_token], // Send to the post owner
+                [$postOwner->device_token],
                 'Post Liked',
                 $user->name . ' liked your post: ' . $post->title,
                 [
-                    'user_id' => $user->id,
+                    'user_id' => $postOwner->id,           // receiver (who gets notification)
+                    'sender_id' => $user->id,              // actor (who liked the post)
                     'related_id' => $post->id,
                     'related_type' => 'Post',
-                    'type' => 'like'
+                    'type' => 'like',
                 ]
             );
             ResponseService::successResponse('Post liked.');
         }
     }
+
+    // public function addComment(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'post_id' => 'required|exists:posts,id',
+    //         'comment' => 'required|string'
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         ResponseService::validationError($validator->errors()->first());
+    //     }
+
+    //     $user = Auth::user();
+
+    //     $comment = Comment::create([
+    //         'post_id' => $request->post_id,
+    //         'user_id' => $user->id,
+    //         'comment' => $request->comment
+    //     ]);
+
+    //     // Get the post owner and all users who have commented on this post
+    //     $postOwner = $comment->post->user; // Post owner
+    //     $commenters = Comment::where('post_id', $request->post_id)
+    //         ->where('user_id', '!=', $user->id) // Exclude the current user who is commenting
+    //         ->pluck('user_id'); // Get other users who have commented
+
+    //     // Send notification to the post owner
+    //     NotificationService::sendFcmNotification(
+    //         [$postOwner->device_token], // Send to the post owner
+    //         'New Comment on Your Post',
+    //         $user->name . ' commented on your post: ' . $comment->post->title,
+    //         [
+    //             'user_id' => $user->id,
+    //             'related_id' => $comment->post_id,
+    //             'related_type' => 'Post',
+    //             'type' => 'comment'
+    //         ]
+    //     );
+
+    //     // Send notification to other users who commented on the same post
+    //     foreach ($commenters as $commenterId) {
+    //         $commenter = User::find($commenterId);
+    //         if ($commenter) {
+    //             NotificationService::sendFcmNotification(
+    //                 [$commenter->device_token], // Send to the user who commented on the post
+    //                 'New Comment on Post You Commented On',
+    //                 $user->name . ' added a new comment to the post you commented on: ' . $comment->post->title,
+    //                 [
+    //                     'user_id' => $user->id,
+    //                     'related_id' => $comment->post_id,
+    //                     'related_type' => 'Post',
+    //                     'type' => 'comment'
+    //                 ]
+    //             );
+    //         }
+    //     }
+
+    //     ResponseService::successResponse('Comment added successfully.', $comment);
+    // }
 
     public function addComment(Request $request)
     {
@@ -221,36 +282,42 @@ class PostController extends Controller
             'comment' => $request->comment
         ]);
 
-        // Get the post owner and all users who have commented on this post
-        $postOwner = $comment->post->user; // Post owner
-        $commenters = Comment::where('post_id', $request->post_id)
-            ->where('user_id', '!=', $user->id) // Exclude the current user who is commenting
-            ->pluck('user_id'); // Get other users who have commented
+        $post = $comment->post;
+        $postOwner = $post->user;
 
-        // Send notification to the post owner
-        NotificationService::sendFcmNotification(
-            [$postOwner->device_token], // Send to the post owner
-            'New Comment on Your Post',
-            $user->name . ' commented on your post: ' . $comment->post->title,
-            [
-                'user_id' => $user->id,
-                'related_id' => $comment->post_id,
-                'related_type' => 'Post',
-                'type' => 'comment'
-            ]
-        );
+        // Notify post owner if not the one commenting
+        if ($postOwner->id !== $user->id) {
+            NotificationService::sendFcmNotification(
+                [$postOwner->device_token],
+                'New Comment on Your Post',
+                $user->name . ' commented on your post: ' . $post->title,
+                [
+                    'user_id' => $postOwner->id, // 👈 recipient
+                    'sender_id' => $user->id,     // 👈 sender
+                    'related_id' => $post->id,
+                    'related_type' => 'Post',
+                    'type' => 'comment'
+                ]
+            );
+        }
 
-        // Send notification to other users who commented on the same post
-        foreach ($commenters as $commenterId) {
+        // Notify other commenters (except the current user and post owner)
+        $commenterIds = Comment::where('post_id', $post->id)
+            ->whereNotIn('user_id', [$user->id, $postOwner->id])
+            ->distinct()
+            ->pluck('user_id');
+
+        foreach ($commenterIds as $commenterId) {
             $commenter = User::find($commenterId);
-            if ($commenter) {
+            if ($commenter && $commenter->device_token) {
                 NotificationService::sendFcmNotification(
-                    [$commenter->device_token], // Send to the user who commented on the post
-                    'New Comment on Post You Commented On',
-                    $user->name . ' added a new comment to the post you commented on: ' . $comment->post->title,
+                    [$commenter->device_token],
+                    'New Comment on a Post You Commented On',
+                    $user->name . ' also commented on the post: ' . $post->title,
                     [
-                        'user_id' => $user->id,
-                        'related_id' => $comment->post_id,
+                        'user_id' => $commenter->id, // 👈 recipient
+                        'sender_id' => $user->id,     // 👈 sender
+                        'related_id' => $post->id,
                         'related_type' => 'Post',
                         'type' => 'comment'
                     ]
@@ -261,6 +328,64 @@ class PostController extends Controller
         ResponseService::successResponse('Comment added successfully.', $comment);
     }
 
+
+    // public function likeComment(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'comment_id' => 'required|exists:comments,id',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return ResponseService::validationError($validator->errors()->first());
+    //     }
+
+    //     $user = Auth::user();
+    //     // Fetch the comment owner
+    //     $comment = Comment::findOrFail($request->comment_id);
+    //     $commentOwner = $comment->user; // The user who created the comment
+    //     // Check if the user already liked this comment
+    //     $like = Like::where('comment_id', $request->comment_id)
+    //         ->where('user_id', $user->id)
+    //         ->first();
+
+    //     if ($like) {
+    //         $like->delete();
+    //         // Send notification to the comment owner
+    //         NotificationService::sendFcmNotification(
+    //             [$commentOwner->device_token], // Send to the comment owner
+    //             'Comment Unliked',
+    //             $user->name . ' unliked your comment.',
+    //             [
+    //                 'user_id' => $user->id,
+    //                 'related_id' => $comment->id,
+    //                 'related_type' => 'Comment',
+    //                 'type' => 'unlike'
+    //             ]
+    //         );
+    //         return ResponseService::successResponse('Comment unliked.');
+    //     } else {
+    //         Like::create([
+    //             'user_id'    => $user->id,
+    //             'comment_id' => $request->comment_id,
+    //         ]);
+
+    //         // Send notification to the comment owner
+    //         NotificationService::sendFcmNotification(
+    //             [$commentOwner->device_token], // Send to the comment owner
+    //             'Comment Liked',
+    //             $user->name . ' liked your comment.',
+    //             [
+    //                 'user_id' => $user->id,
+    //                 'related_id' => $comment->id,
+    //                 'related_type' => 'Comment',
+    //                 'type' => 'like'
+    //             ]
+    //         );
+    //         return ResponseService::successResponse('Comment liked.');
+    //     }
+    // }
+
+
     public function likeComment(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -268,54 +393,66 @@ class PostController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return ResponseService::validationError($validator->errors()->first());
+            ResponseService::validationError($validator->errors()->first());
         }
 
         $user = Auth::user();
-        // Fetch the comment owner
+
+        // Fetch the comment and owner
         $comment = Comment::findOrFail($request->comment_id);
-        $commentOwner = $comment->user; // The user who created the comment
-        // Check if the user already liked this comment
+        $commentOwner = $comment->user;
+
+        // Check if already liked
         $like = Like::where('comment_id', $request->comment_id)
             ->where('user_id', $user->id)
             ->first();
 
         if ($like) {
             $like->delete();
-            // Send notification to the comment owner
-            NotificationService::sendFcmNotification(
-                [$commentOwner->device_token], // Send to the comment owner
-                'Comment Unliked',
-                $user->name . ' unliked your comment.',
-                [
-                    'user_id' => $user->id,
-                    'related_id' => $comment->id,
-                    'related_type' => 'Comment',
-                    'type' => 'unlike'
-                ]
-            );
-            return ResponseService::successResponse('Comment unliked.');
+
+            // Send "unlike" notification to comment owner (if not self)
+            if ($commentOwner->id !== $user->id && $commentOwner->device_token) {
+                NotificationService::sendFcmNotification(
+                    [$commentOwner->device_token],
+                    'Comment Unliked',
+                    $user->name . ' unliked your comment.',
+                    [
+                        'user_id' => $commentOwner->id,
+                        'sender_id' => $user->id,
+                        'related_id' => $comment->id,
+                        'related_type' => 'Comment',
+                        'type' => 'unlike'
+                    ]
+                );
+            }
+
+            ResponseService::successResponse('Comment unliked.');
         } else {
             Like::create([
                 'user_id'    => $user->id,
                 'comment_id' => $request->comment_id,
             ]);
 
-            // Send notification to the comment owner
-            NotificationService::sendFcmNotification(
-                [$commentOwner->device_token], // Send to the comment owner
-                'Comment Liked',
-                $user->name . ' liked your comment.',
-                [
-                    'user_id' => $user->id,
-                    'related_id' => $comment->id,
-                    'related_type' => 'Comment',
-                    'type' => 'like'
-                ]
-            );
-            return ResponseService::successResponse('Comment liked.');
+            // Send "like" notification to comment owner (if not self)
+            if ($commentOwner->id !== $user->id && $commentOwner->device_token) {
+                NotificationService::sendFcmNotification(
+                    [$commentOwner->device_token],
+                    'Comment Liked',
+                    $user->name . ' liked your comment.',
+                    [
+                        'user_id' => $commentOwner->id,
+                        'sender_id' => $user->id,
+                        'related_id' => $comment->id,
+                        'related_type' => 'Comment',
+                        'type' => 'like'
+                    ]
+                );
+            }
+
+            ResponseService::successResponse('Comment liked.');
         }
     }
+
 
     public function reportPost(Request $request)
     {
