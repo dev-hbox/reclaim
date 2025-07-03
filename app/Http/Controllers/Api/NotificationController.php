@@ -15,10 +15,15 @@ class NotificationController extends Controller
     public function getNotifications()
     {
         $user = Auth::user();
-        $notifications = Notification::with(['user', 'related', 'sender'])
-            ->where('user_id',  $user->id)
+        $notifications = Notification::with([
+            'user.profile',
+            'sender.profile',
+            'related'
+        ])
+            ->where('user_id', $user->id)
             ->orderByDesc('created_at')
             ->get();
+
 
         ResponseService::successResponse('Notifications fetched successfully.', $notifications);
     }
