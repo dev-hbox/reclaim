@@ -14,7 +14,6 @@ class NotificationService
         // Getting Access Token for Firebase
         $accessToken = self::getAccessToken();
 
-
         $projectId = config('services.firebase.project_id');
         $url = "https://fcm.googleapis.com/v1/projects/{$projectId}/messages:send";
 
@@ -30,12 +29,15 @@ class NotificationService
                         'body' => $body,
                     ],
                     'data' => array_map('strval', array_merge($data, [
-                        'type' => 'notification',
+                        'type' => $data['type'] ?? 'notification',
+                        'related_id' => $data['related_id'] ?? '',
+                        'related_type' => $data['related_type'] ?? '',
                         'title' => $title,
                         'body' => $body,
                     ])),
                 ]
             ];
+
 
             $headers = [
                 'Authorization' => 'Bearer ' . $accessToken,
