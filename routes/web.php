@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\Questionnaire;
 use App\Http\Controllers\QuestionnaireController;
@@ -23,11 +24,13 @@ Route::get('/test-google-client', function () {
 
 
 
-// Authentication Routes
-Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [LoginController::class, 'login']);
-Route::post('/authenticate', [AdminController::class, 'authenticate'])->name('authenticate');
-Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
+Route::get('/', function () {
+    return view('auth/signin');
+});
+
+
+Route::post('auth-login', [AdminController::class, 'authenticate'])->name('auth-login');
+
 
 // User Routes
 Route::middleware(['auth', 'role:user'])->group(function () {

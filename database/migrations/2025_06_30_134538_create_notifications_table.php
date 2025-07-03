@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');  // User who is receiving the notification (the target user)
+            $table->foreignId('sender_id')->nullable()->constrained('users')->onDelete('set null');
             $table->string('type');  // The type of the notification (like 'post_like', 'comment', 'follow', etc.)
             $table->string('title');  // Title and message for the notification
             $table->string('message');
