@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->text('description');
-            $table->string('avatar')->default('/uploads/lesson/user-default.png');
+            $table->string('avatar')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->string('video')->nullable();
             $table->timestamps();
