@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use App\Models\PostReport;
+use App\Models\User;
 use App\Services\ResponseService;
 use Exception;
 use Illuminate\Http\Request;
@@ -49,6 +50,71 @@ class AdminController extends Controller
             return redirect()->back()->withError($e->getMessage());
         }
     }
+
+    public function profile()
+    {
+        try {
+            if (Auth::check()) {
+                $user = Auth::user();
+                if ($user->role === 'admin') {
+
+                    $profile = User::where('id', $user->id)->first();
+
+                    return view('dashboard/profile', compact('profile'));
+                }
+            } else {
+                return redirect()->route('index');
+            }
+        } catch (Exception $e) {
+            return redirect()->back()->withError($e->getMessage());
+        }
+    }
+
+
+    public function users()
+    {
+        $users = User::with('profile')
+            ->where('role', '!=', 'admin')
+            ->paginate(10);
+        return view('dashboard.users.index', compact('users'));
+    }
+
+    public function userDetail($id)
+    {
+
+        $user = User::with('profile')
+            ->where('role', '!=', 'admin')
+            ->where('id', $id)
+            ->first();
+
+        return view('dashboard.users.user-detail', compact('user'));
+    }
+
+
+    public function toggleUserStatus($id)
+    {
+        $user = User::with('profile')->find($id);
+
+        if (!$user) {
+            return redirect()->back()->with('danger', 'User not found.');
+        }
+
+        // Toggle the status
+        if ($user->status == 1) {
+            $user->status = 0;
+            $message = 'Account Suspended Successfully.';
+            $alertType = 'danger';
+        } else {
+            $user->status = 1;
+            $message = 'Account Activated Successfully.';
+            $alertType = 'success';
+        }
+
+        $user->save();
+
+        return redirect()->back()->with($alertType, $message);
+    }
+
 
     public function handlePostReport(Request $request)
     {

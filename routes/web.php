@@ -1,9 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\LoginController;
-use App\Http\Controllers\Questionnaire;
+use App\Http\Controllers\AffirmationController;
 use App\Http\Controllers\QuestionnaireController;
 use Illuminate\Support\Facades\Route;
 use Google\Client;
@@ -11,10 +9,6 @@ use Google\Client;
 // Route::get('/', function () {
 //     return view('welcome');
 // });
-
-Route::get('/', [LoginController::class, 'index'])->name('index');
-
-
 
 
 Route::get('/test-google-client', function () {
@@ -40,6 +34,16 @@ Route::middleware(['auth', 'role:user'])->group(function () {
 // Admin Routes
 Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/profile', [AdminController::class, 'profile'])->name('profile');
+
+    // Users Routes 
+    Route::get('/users', [AdminController::class, 'users'])->name('users');
+    Route::get('/user-detail/{id}', [AdminController::class, 'userDetail'])->name('user-detail');
+    Route::get('/user-status/{id}', [AdminController::class, 'toggleUserStatus']);
+
+    // Affirmatives Routes 
+    Route::get('/affirmatives', [AffirmationController::class, 'index']);
+    Route::get('/affirm-delete/{id}', [AffirmationController::class, 'affirmDelete']);
 
     // Questionnaire Routes 
     Route::get('/questions', [QuestionnaireController::class, 'index'])->name('questions');

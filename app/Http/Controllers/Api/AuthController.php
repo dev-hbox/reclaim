@@ -164,7 +164,12 @@ class AuthController extends Controller
             ResponseService::errorResponse('Invalid credentials.', null, 401);
         }
 
-        // Ensure OTP is verified
+        // Ensure Admin suspended Or Not
+        if ($user->status == 0) {
+            ResponseService::errorResponse('Your account has been suspended by the administrator. Please contact support for assistance.', null, 403);
+        }
+
+
         if ($user->otp_status == 0) {
             ResponseService::errorResponse('Please verify your email before logging in.', null, 403);
         }
