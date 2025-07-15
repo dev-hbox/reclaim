@@ -6,6 +6,7 @@
         <div class="nk-content nk-content-fluid">
             <div class="container-xl wide-xl">
                 <div class="nk-content-body">
+                    @include('partials._response')
                     <div class="nk-block-head nk-page-head nk-block-head-sm">
                         <div class="nk-block-head-between">
                             <div class="nk-block-head-content">

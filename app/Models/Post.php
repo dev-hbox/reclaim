@@ -8,6 +8,7 @@ class Post extends Model
 {
     protected $guarded = [];
 
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -23,8 +24,10 @@ class Post extends Model
         return $this->hasMany(Like::class)->whereNotNull('post_id');
     }
 
+
+
     public function reports()
     {
-        return $this->hasMany(PostReport::class);
+        return $this->hasMany(PostReport::class, 'post_id');
     }
 }

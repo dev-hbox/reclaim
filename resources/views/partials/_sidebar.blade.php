@@ -46,23 +46,24 @@
                      <li class="nk-menu-item">
                          <a href="{{ url('admin/affirmatives') }}" class="nk-menu-link">
                              <span class="nk-menu-icon">
-                                 <em class="icon ni ni-layers"></em>
+                                 <em class="icon ni ni-text2"></em>
+
                              </span>
                              <span class="nk-menu-text">Daily Affirmatives</span>
                          </a>
                      </li>
 
                      <li class="nk-menu-item">
-                         <a href="html/copywriter/templates.html" class="nk-menu-link">
+                         <a href="{{ url('admin/questions') }}" class="nk-menu-link">
                              <span class="nk-menu-icon">
-                                 <em class="icon ni ni-layers"></em>
+                                 <em class="icon ni ni-question"></em>
                              </span>
                              <span class="nk-menu-text">Questionnaire</span>
                          </a>
                      </li>
 
                      <li class="nk-menu-item">
-                         <a href="html/copywriter/templates.html" class="nk-menu-link">
+                         <a href="{{ url('admin/lessons') }}" class="nk-menu-link">
                              <span class="nk-menu-icon">
                                  <em class="icon ni ni-layers"></em>
                              </span>
@@ -70,6 +71,25 @@
                          </a>
                      </li>
 
+
+                     <li class="nk-menu-item has-sub">
+                         <a href="#" class="nk-menu-link nk-menu-toggle">
+                             <span class="nk-menu-icon"><em class="icon ni ni-share-alt"></em></span>
+                             <span class="nk-menu-text">Community</span>
+                         </a>
+                         <ul class="nk-menu-sub">
+                             <li class="nk-menu-item">
+                                 <a href="{{ url('admin/posts') }}" class="nk-menu-link"><span class="nk-menu-text">All
+                                         Posts</span></a>
+                             </li>
+                             <li class="nk-menu-item">
+                                 <a href="{{ url('admin/reported-posts') }}" class="nk-menu-link"><span
+                                         class="nk-menu-text">Report
+                                         Posts</span></a>
+                             </li>
+
+                         </ul><!-- .nk-menu-sub -->
+                     </li><!-- .nk-menu-item -->
 
 
                  </ul><!-- .nk-menu -->

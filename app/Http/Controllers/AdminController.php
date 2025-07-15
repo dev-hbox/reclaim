@@ -35,7 +35,7 @@ class AdminController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect()->route('index')->with('message', 'Logout Successfully');
+        return redirect()->route('login')->with('message', 'Logout Successfully');
     }
 
     public function dashboard()
@@ -81,13 +81,29 @@ class AdminController extends Controller
 
     public function userDetail($id)
     {
-
-        $user = User::with('profile')
+        $user = User::with([
+            'profile',
+            'saveLessons.lesson',
+            'panicLogs',
+            'progress'
+        ])
             ->where('role', '!=', 'admin')
             ->where('id', $id)
-            ->first();
+            ->firstOrFail();
 
-        return view('dashboard.users.user-detail', compact('user'));
+        $commitments = $user->commitments()
+            ->latest()
+            ->paginate(6); // Adjust the per-page limit
+
+        $lessons = $user->saveLessons()
+            ->with('lesson')
+            ->paginate(6);
+
+        $panicLogs = $user->panicLogs()
+            ->paginate(6);
+
+
+        return view('dashboard.users.user-detail', compact('user', 'commitments', 'lessons', 'panicLogs'));
     }
 
 

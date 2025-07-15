@@ -77,4 +77,19 @@ class User extends Authenticatable
     {
         return $this->hasMany(PanicTask::class);
     }
+
+    public function panicLogs()
+    {
+        return $this->hasMany(TaskHistory::class);
+    }
+
+    public function commitments()
+    {
+        return $this->hasMany(Commitment::class);
+    }
+
+    public function saveLessons()
+    {
+        return $this->hasMany(SaveLesson::class);
+    }
 }

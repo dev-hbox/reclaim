@@ -13,7 +13,8 @@
 
                                 <h3 class="nk-block-title page-title">Users Lists </h3>
                                 <div class="nk-block-des text-soft">
-                                    <p>You have total {{ $users->count() ?? 0 }} users. </p>
+                                    <p>You have total  <span
+                                        class="badge badge-light text-muted">{{ $users->total() }} </span> users. </p>
                                 </div>
                             </div><!-- .nk-block-head-content -->
                             <div class="nk-block-head-content">
