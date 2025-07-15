@@ -9,7 +9,8 @@
                     <div class="nk-block nk-block-lg">
                         <div class="nk-block-between my-5">
                             <div class="nk-block-head-content">
-                                <h3 class="nk-block-title page-title">Daily Affirmatives </h3>
+                                <h3 class="nk-block-title page-title">Daily Affirmation <span
+                                        class="badge badge-light text-muted">{{ $affirmations->count() }} </span> </h3>
 
                             </div><!-- .nk-block-head-content -->
                             <div class="nk-block-head-content">
@@ -27,7 +28,7 @@
                                                         <ul class="link-list-opt no-bdr">
                                                             <li><a href="#" data-bs-toggle="modal"
                                                                     data-bs-target="#modalForm"><span>Add
-                                                                        Affitmatives</span></a></li>
+                                                                        Affitmation</span></a></li>
 
                                                         </ul>
                                                     </div>
@@ -73,7 +74,17 @@
                                                     </p>
                                                     <div class="mt-auto">
                                                         <a href="{{ url('admin/affirm-delete/' . $affirm->id) }}"
-                                                            class="card-link text-danger mt-auto">Delete</a>
+                                                            class="btn btn-danger mt-auto">Delete</a>
+                                                        <a href="javascript:void(0);" class="btn btn-info edit-btn"
+                                                            data-id="{{ $affirm->id }}"
+                                                            data-title="{{ e($affirm->title) }}"
+                                                            data-description="{{ e($affirm->description) }}"
+                                                            data-date="{{ $affirm->show_date }}">
+                                                            Edit
+                                                        </a>
+
+
+
                                                     </div>
 
                                                 </div>
@@ -91,76 +102,131 @@
                 </div>
 
 
-                <!-- Modal Form -->
+                <!-- Store Modal Form -->
                 <div class="modal fade" id="modalForm">
                     <div class="modal-dialog" role="document">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title">Customer Info</h5>
+                                <h5 class="modal-title">Add Affirmation</h5>
                                 <a href="#" class="close" data-bs-dismiss="modal" aria-label="Close">
                                     <em class="icon ni ni-cross"></em>
                                 </a>
                             </div>
                             <div class="modal-body">
-                                <form action="#" class="form-validate is-alter">
+                                <form action="{{ route('affirmations.store') }}" method="POST"
+                                    class="form-validate is-alter">
+
+                                    @csrf
+
                                     <div class="form-group">
-                                        <label class="form-label" for="full-name">Full Name</label>
+                                        <label class="form-label" for="title">Title</label>
                                         <div class="form-control-wrap">
-                                            <input type="text" class="form-control" id="full-name" required>
+                                            <input type="text" class="form-control" name="title" id="title"
+                                                value="{{ old('title') }}" required>
+                                            @error('title')
+                                                <span class="text-danger">{{ $message }}</span>
+                                            @enderror
                                         </div>
                                     </div>
+
                                     <div class="form-group">
-                                        <label class="form-label" for="email-address">Email address</label>
+                                        <label class="form-label" for="description">Description</label>
                                         <div class="form-control-wrap">
-                                            <input type="text" class="form-control" id="email-address" required>
+                                            <textarea class="form-control no-resize" name="description" id="description">{{ old('description') }}</textarea>
+                                            @error('description')
+                                                <span class="text-danger">{{ $message }}</span>
+                                            @enderror
                                         </div>
                                     </div>
+
                                     <div class="form-group">
-                                        <label class="form-label" for="phone-no">Phone No</label>
+                                        <label class="form-label">Date</label>
                                         <div class="form-control-wrap">
-                                            <input type="text" class="form-control" id="phone-no">
+                                            <div class="form-icon form-icon-left">
+                                                <em class="icon ni ni-calendar"></em>
+                                            </div>
+                                            <input type="text" class="form-control date-picker" name="show_date"
+                                                value="{{ old('show_date') }}" data-date-format="yyyy-mm-dd">
+                                            @error('show_date')
+                                                <span class="text-danger">{{ $message }}</span>
+                                            @enderror
                                         </div>
                                     </div>
+
                                     <div class="form-group">
-                                        <label class="form-label">Communication</label>
-                                        <ul class="custom-control-group g-3 align-center">
-                                            <li>
-                                                <div class="custom-control custom-control-sm custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input" id="com-email">
-                                                    <label class="custom-control-label" for="com-email">Email</label>
-                                                </div>
-                                            </li>
-                                            <li>
-                                                <div class="custom-control custom-control-sm custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input" id="com-sms">
-                                                    <label class="custom-control-label" for="com-sms">SMS</label>
-                                                </div>
-                                            </li>
-                                            <li>
-                                                <div class="custom-control custom-control-sm custom-checkbox">
-                                                    <input type="checkbox" class="custom-control-input" id="com-phone">
-                                                    <label class="custom-control-label" for="com-phone">Phone</label>
-                                                </div>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label" for="pay-amount">Amount</label>
-                                        <div class="form-control-wrap">
-                                            <input type="number" class="form-control" id="pay-amount">
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <button type="submit" class="btn btn-lg btn-primary">Save Informations</button>
+                                        <button type="submit" class="btn btn-lg btn-primary">Add Affirmation</button>
                                     </div>
                                 </form>
+
                             </div>
-                            <div class="modal-footer bg-light">
-                                <span class="sub-text">Modal Footer Text</span>
+
+                        </div>
+                    </div>
+                </div>
+                <!-- Store Modal Form End -->
+
+
+                <!-- Update Modal Form -->
+                <div class="modal fade" id="modalFormUpdate" tabindex="-1" aria-hidden="true">
+
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalTitle">Add Affirmation</h5>
+                                <a href="#" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                    <em class="icon ni ni-cross"></em>
+                                </a>
+                            </div>
+                            <div class="modal-body">
+                                <form id="affirmationForm" method="POST" class="form-validate is-alter">
+                                    @csrf
+
+                                    <div class="form-group">
+                                        <label class="form-label" for="modal-title">Title</label>
+                                        <div class="form-control-wrap">
+                                            <input type="text" class="form-control" name="title" id="modal-title"
+                                                required>
+                                            @error('title')
+                                                <span class="text-danger">{{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label" for="modal-description">Description</label>
+                                        <div class="form-control-wrap">
+                                            <textarea class="form-control no-resize" name="description" id="modal-description"></textarea>
+                                            @error('description')
+                                                <span class="text-danger">{{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="form-label">Date</label>
+                                        <div class="form-control-wrap">
+                                            <div class="form-icon form-icon-left">
+                                                <em class="icon ni ni-calendar"></em>
+                                            </div>
+                                            <input type="text" class="form-control date-picker" name="show_date"
+                                                id="modal-date" data-date-format="yyyy-mm-dd">
+                                            @error('show_date')
+                                                <span class="text-danger">{{ $message }}</span>
+                                            @enderror
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <button type="submit" id="modal-submit-btn" class="btn btn-lg btn-primary">Add
+                                            Affirmation</button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Update Modal Form -->
 
             </div>
         </div>

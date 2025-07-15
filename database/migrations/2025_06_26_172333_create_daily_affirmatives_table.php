@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->text('title');
             $table->text('description')->nullable();
-            $table->date('show_date')->unique(); // <- Admin defines the date
+            $table->date('show_date')->unique();
             $table->timestamps();
         });
     }

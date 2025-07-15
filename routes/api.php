@@ -68,7 +68,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
 
     // Lesson Routes
-    Route::get('/lessons', [LessonController::class, 'allLessons']);
+    Route::get('/lessons', [SaveLessonController::class, 'allLessons']);
     Route::post('/save-lesson', [SaveLessonController::class, 'saveLesson']);
     Route::get('/save-lesson-list', [SaveLessonController::class, 'saveLessonList']);
 

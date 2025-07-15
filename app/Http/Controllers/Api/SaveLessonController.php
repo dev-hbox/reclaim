@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Lesson;
 use App\Models\SaveLesson;
 use App\Services\ResponseService;
 use Illuminate\Http\Request;
@@ -11,6 +12,22 @@ use Illuminate\Support\Facades\{Auth, Validator};
 
 class SaveLessonController extends Controller
 {
+
+    public function allLessons()
+    {
+        $authUser = Auth::user();
+        $lessons = Lesson::all()->map(function ($lesson) use ($authUser) {
+            $isSaved = SaveLesson::where('user_id', $authUser->id)
+                ->where('lesson_id', $lesson->id)
+                ->exists();
+
+            // Append is_save field
+            $lesson->is_save = $isSaved ? 1 : 0;
+            return $lesson;
+        });
+        ResponseService::successResponse('Lessons retrieved successfully.', $lessons);
+    }
+
     public function saveLesson(Request $request)
     {
         try {

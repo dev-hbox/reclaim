@@ -28,6 +28,7 @@
                     <div class="nk-split nk-split-page nk-split-md">
                         <div class="nk-split-content nk-block-area nk-block-area-column nk-auth-container bg-white">
                             <div class="nk-block nk-block-middle nk-auth-body">
+                                @include('partials._response')
                                 <div class="brand-logo pb-5">
                                     <a href="{{ url('/') }}" class="logo-link">
                                         <img class="logo-light logo-img logo-img-lg"
