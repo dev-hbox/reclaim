@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DailyAffirmative;
+use App\Models\Lesson;
 use App\Models\Post;
 use App\Models\PostReport;
 use App\Models\User;
@@ -42,7 +44,12 @@ class AdminController extends Controller
     {
         try {
             if (Auth::check()) {
-                return view('dashboard/index');
+                $users = User::with('profile')->where('role', '!=', 'admin')
+                    ->get();
+                $affirms = DailyAffirmative::get();
+                $lessons = Lesson::get();
+                $posts = Post::get();
+                return view('dashboard/index', compact('users', 'affirms', 'lessons', 'posts'));
             } else {
                 return redirect()->route('index');
             }

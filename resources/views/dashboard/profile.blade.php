@@ -32,7 +32,8 @@
                                                     <div class="data-item" data-bs-toggle="modal" data-bs-target="#profile-edit">
                                                         <div class="data-col">
                                                             <span class="data-label">Full Name</span>
-                                                            <span class="data-value">{{ Auth::user()->profile->name ?? 'Admin' }}</span>
+                                                            <span
+                                                                class="data-value">{{ Auth::user()->profile->name ?? 'Admin' }}</span>
                                                         </div>
                                                         <div class="data-col data-col-end"><span class="data-more"><em
                                                                     class="icon ni ni-forward-ios"></em></span></div>
