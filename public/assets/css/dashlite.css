@@ -44143,3 +44143,10 @@ body.dark-mode.nk-body.ui-softy, body.dark-mode.nk-body.ui-shady {
   overflow: visible;
   white-space: normal;
 }
+/* kevin css  */
+
+.user-avatar img {
+    height: 40px !important;
+    object-fit: fill;
+    width: 40px !important;
+}

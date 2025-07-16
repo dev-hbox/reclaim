@@ -32,7 +32,7 @@
                      <li class="nk-menu-item has-sub">
                          <a href="#" class="nk-menu-link nk-menu-toggle">
                              <span class="nk-menu-icon"><em class="icon ni ni-users"></em></span>
-                             <span class="nk-menu-text">User Manage</span>
+                             <span class="nk-menu-text">User Management</span>
                          </a>
                          <ul class="nk-menu-sub">
                              <li class="nk-menu-item">
@@ -49,7 +49,7 @@
                                  <em class="icon ni ni-text2"></em>
 
                              </span>
-                             <span class="nk-menu-text">Daily Affirmatives</span>
+                             <span class="nk-menu-text">Daily Affirmations</span>
                          </a>
                      </li>
 
