@@ -9,8 +9,8 @@
              <div class="nk-header-brand d-xl-none">
                  <a href="html/index.html" class="logo-link">
                      <img class="logo-light logo-img" src="{{ asset('images/logo.png') }}"
-                         srcset="{{asset('images/logo2x.png 2x')}}" alt="logo">
-                     <img class="{{asset('logo-dark logo-img')}}" src="{{ asset('images/logo-dark.png') }}"
+                         srcset="{{ asset('images/logo2x.png 2x') }}" alt="logo">
+                     <img class="{{ asset('logo-dark logo-img') }}" src="{{ asset('images/logo-dark.png') }}"
                          srcset="./images/logo-dark2x.png 2x" alt="logo-dark">
                  </a>
              </div><!-- .nk-header-brand -->
@@ -37,8 +37,9 @@
                                          <span>AB</span>
                                      </div>
                                      <div class="user-info">
-                                         <span class="lead-text">Abu Bin Ishtiyak</span>
-                                         <span class="sub-text">info@softnio.com</span>
+                                         <span class="lead-text">{{ Auth::user()->profile->name ?? '' }}</span>
+
+                                         <span class="sub-text">{{ Auth::user()->email ?? '' }}</span>
                                      </div>
                                  </div>
                              </div>
@@ -47,15 +48,16 @@
                                      <li><a href="{{ url('admin/profile') }}"><em
                                                  class="icon ni ni-user-alt"></em><span>View
                                                  Profile</span></a></li>
-                                     <li><a href="{{ url('') }}"><em
+                                     {{-- <li><a href="{{ url('') }}"><em
                                                  class="icon ni ni-setting-alt"></em><span>Account Setting</span></a>
-                                     </li>
+                                     </li> --}}
 
                                  </ul>
                              </div>
                              <div class="dropdown-inner">
                                  <ul class="link-list">
-                                     <li><a href="{{ route('logout') }}"><em class="icon ni ni-signout"></em><span>Sign out</span></a>
+                                     <li><a href="{{ route('logout') }}"><em class="icon ni ni-signout"></em><span>Sign
+                                                 out</span></a>
                                      </li>
                                  </ul>
                              </div>
