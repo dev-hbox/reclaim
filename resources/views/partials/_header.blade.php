@@ -7,11 +7,11 @@
                          class="icon ni ni-menu"></em></a>
              </div>
              <div class="nk-header-brand d-xl-none">
-                 <a href="html/index.html" class="logo-link">
+                 <a href="{{ route('dashboard') }}" class="logo-link">
                      <img class="logo-light logo-img" src="{{ asset('images/logo.png') }}"
                          srcset="{{ asset('images/logo2x.png 2x') }}" alt="logo">
                      <img class="{{ asset('logo-dark logo-img') }}" src="{{ asset('images/logo-dark.png') }}"
-                         srcset="./images/logo-dark2x.png 2x" alt="logo-dark">
+                         srcset="{{ asset('/images/logo-dark2x.png 2x') }}" alt="logo-dark">
                  </a>
              </div><!-- .nk-header-brand -->
              <div class="nk-header-menu is-light">
@@ -33,9 +33,15 @@
                          <div class="dropdown-menu dropdown-menu-md dropdown-menu-end">
                              <div class="dropdown-inner user-card-wrap bg-lighter d-none d-md-block">
                                  <div class="user-card">
-                                     <div class="user-avatar">
-                                         <span>AB</span>
+                                     <div class="user-avatar bg-primary">
+                                         <span>
+                                             <img src="{{ asset(Auth::user()->profile->avatar ?? '') }}"
+                                                 alt="{{ Auth::user()->profile->name ?? '' }}">
+                                         </span>
+
+
                                      </div>
+
                                      <div class="user-info">
                                          <span class="lead-text">{{ Auth::user()->profile->name ?? '' }}</span>
 

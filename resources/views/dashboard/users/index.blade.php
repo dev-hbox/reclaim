@@ -174,10 +174,6 @@
                                                             @endif
                                                             <span>Email</span>
                                                         </li>
-                                                        <li>
-                                                            <em class="icon ni ni-alert-circle"></em>
-                                                            <span>KYC</span>
-                                                        </li>
                                                     </ul>
                                                 </div>
 
