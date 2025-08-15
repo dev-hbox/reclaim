@@ -1,4 +1,5 @@
 @extends('layouts.main')
+@section('title', 'Users Lists')
 @section('content')
     <!-- content @s
         -->
