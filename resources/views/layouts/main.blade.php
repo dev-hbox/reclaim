@@ -19,7 +19,6 @@
         <!-- main @e -->
     </div>
     <!-- app-root @e -->
-    @include('partials._modal')
     @include('partials._footerlinks')
 </body>
 

@@ -1,5 +1,5 @@
 @extends('layouts.main')
-
+@section('title', 'Community')
 @section('content')
     <div class="nk-content nk-content-fluid">
         <div class="container-xl wide-xl">

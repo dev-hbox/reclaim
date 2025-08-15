@@ -292,6 +292,40 @@ class AuthController extends Controller
         ResponseService::successResponse('Affirmation fetched.', $affirmation);
     }
 
+
+    // public function todayAffirmation()
+    // {
+    //     // Use app timezone (set in config/app.php) to avoid off-by-one issues
+    //     $today = today(config('app.timezone'))->toDateString();
+
+    //     // 1) Exact match for today
+    //     $affirmation = DailyAffirmative::whereDate('show_date', $today)->first();
+
+    //     // 2) Fallback to latest past (<= today)
+    //     if (! $affirmation) {
+    //         $affirmation = DailyAffirmative::whereDate('show_date', '<=', $today)
+    //             ->orderByDesc('show_date')
+    //             ->first();
+    //     }
+
+    //     // 3) Fallback to next upcoming (> today)
+    //     if (! $affirmation) {
+    //         $affirmation = DailyAffirmative::whereDate('show_date', '>', $today)
+    //             ->orderBy('show_date')
+    //             ->first();
+    //     }
+
+    //     if (! $affirmation) {
+    //         return ResponseService::errorResponse('No affirmation available yet.', null, 404);
+    //     }
+
+    //     return ResponseService::successResponse('Affirmation fetched.', $affirmation);
+    // }
+
+
+
+
+
     public function deleteAccount()
     {
         $user = Auth::user();
