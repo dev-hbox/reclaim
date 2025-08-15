@@ -10,9 +10,7 @@
 /.phpunit.result.cache
 
 # Laravel environment files
-.env
 .env.backup
-.env.production
 
 # IDE / editor files
 /.fleet
@@ -36,3 +34,4 @@ yarn-error.log
 
 # Firebase service account credentials
 /public/firebase/service-account.json
+config.bat

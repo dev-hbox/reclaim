@@ -1,4 +1,5 @@
 @extends('layouts.main')
+@section('title', 'Reported Posts')
 @section('content')
     <!-- content @s
         -->

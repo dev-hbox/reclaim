@@ -10,9 +10,11 @@ class AffirmationController extends Controller
 {
     public function index()
     {
-        $affirmations = DailyAffirmative::orderBy('show_date', 'desc')->get(); // or 'asc'
+        $today = Carbon::today(config('app.timezone'));
+        $affirmations = DailyAffirmative::orderBy('show_date', 'desc')->paginate(10); // or 'asc'
         return view('dashboard.affirmatives.index', compact('affirmations'));
     }
+
 
     public function storeAffirm(Request $request)
     {

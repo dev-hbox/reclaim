@@ -1,5 +1,5 @@
 @extends('layouts.main')
-
+@section('title', 'Affirmations')
 @section('content')
     <div class="nk-content nk-content-fluid">
         <div class="container-xl wide-xl">
@@ -10,7 +10,7 @@
                         <div class="nk-block-between my-5">
                             <div class="nk-block-head-content">
                                 <h3 class="nk-block-title page-title">Daily Affirmation <span
-                                        class="badge badge-light text-muted">{{ $affirmations->count() }} </span> </h3>
+                                        class="badge badge-light text-muted">{{ $affirmations->total() }} </span> </h3>
 
                             </div><!-- .nk-block-head-content -->
                             <div class="nk-block-head-content">
@@ -96,9 +96,70 @@
 
 
                             </div>
+                            {{-- pagination start --}}
+                            <div class="card-inner">
+                                <div class="nk-block-between-md g-3">
+                                    <div class="g">
+                                        <ul class="pagination justify-content-center justify-content-md-start">
+                                            {{-- Previous Page Link --}}
+                                            @if ($affirmations->onFirstPage())
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">Prev</span>
+                                                </li>
+                                            @else
+                                                <li class="page-item">
+                                                    <a class="page-link"
+                                                        href="{{ $affirmations->previousPageUrl() }}">Prev</a>
+                                                </li>
+                                            @endif
+
+                                            {{-- Pagination Elements --}}
+                                            @foreach ($affirmations->getUrlRange(1, $affirmations->lastPage()) as $page => $url)
+                                                <li
+                                                    class="page-item {{ $affirmations->currentPage() == $page ? 'active' : '' }}">
+                                                    <a class="page-link"
+                                                        href="{{ $url }}">{{ $page }}</a>
+                                                </li>
+                                            @endforeach
+
+                                            {{-- Next Page Link --}}
+                                            @if ($affirmations->hasMorePages())
+                                                <li class="page-item">
+                                                    <a class="page-link" href="{{ $affirmations->nextPageUrl() }}">Next</a>
+                                                </li>
+                                            @else
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">Next</span>
+                                                </li>
+                                            @endif
+                                        </ul><!-- .pagination -->
+                                    </div>
+
+                                    <div class="g">
+                                        <div
+                                            class="pagination-goto d-flex justify-content-center justify-content-md-start gx-3">
+                                            <div>Page</div>
+                                            <div>
+                                                <select class="form-select js-select2" data-search="on"
+                                                    data-dropdown="xs center" onchange="window.location.href = this.value">
+                                                    @for ($i = 1; $i <= $affirmations->lastPage(); $i++)
+                                                        <option value="{{ $affirmations->url($i) }}"
+                                                            {{ $affirmations->currentPage() == $i ? 'selected' : '' }}>
+                                                            {{ $i }}
+                                                        </option>
+                                                    @endfor
+                                                </select>
+                                            </div>
+                                            <div>OF {{ $affirmations->lastPage() }}</div>
+                                        </div>
+                                    </div><!-- .pagination-goto -->
+                                </div><!-- .nk-block-between -->
+                            </div><!-- .card-inner -->
+                            {{-- pagination end --}}
                         </div><!-- .card-preview -->
 
                     </div>
+
                 </div>
 
 
